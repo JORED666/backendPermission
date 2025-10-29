@@ -1,31 +1,18 @@
-package com.example.permition.application
+package permition.application
 
-import com.example.permition.domain.PermitRepository
-import com example.permition.domain.dto.PermitResponse
+import permition.domain.PermitRepository
+import permition.domain.entities.PermitStatus
 
-class DeletePermit_UseCase(private val  repository: PermitRepository){
+class DeletePermitUseCase(private val db: PermitRepository) {
 
-    suspend operator fun invoke(permitId: Int): PermitResponse{
-        //Verificar que el permiso existe
-        val existingPermit = repository.getPermitById(permitId)
-        if(existingPermit == null){
-            return PermitResponse(
-                success = false,
-                message = "Permiso no encontrado"
-            )
+    suspend fun execute(permitId: Int) {
+        val existingPermit =
+                db.getById(permitId) ?: throw IllegalArgumentException("El permiso no existe")
+
+        if (existingPermit.status != PermitStatus.PENDING) {
+            throw IllegalArgumentException("Solo se pueden eliminar permisos pendientes")
         }
-        val deleted = repository.deletePermit(permitId)
 
-        return if (deleted){
-            PermitResponse(
-                success = true,
-                message = "Permiso eliminado exitosamente"
-            )
-        }else{
-            PermitResponse(
-                success = false,
-                message = "Error al eliminar el permiso"
-            )
-        }
+        db.delete(permitId)
     }
 }

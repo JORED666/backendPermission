@@ -1,53 +1,26 @@
-package com.example.permition.application
+package permition.application
 
-import com.example.permition.domain.PermitRepository
-import com.example.permition.domain.dto.PermitResponse
-import com.example.permition.domain.entitie.CreatePermitRequest
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import permition.domain.PermitRepository
+import permition.domain.entities.Permition
+import java.time.LocalDateTime
 
-class CreatePermit_UseCase(private val repository: PermitRepository){
-    suspend operator fun invoke(request: CreatePermitRequest): PermitResponse{
-        //Validar fechas
-        if (request.startDate.isBlank() || request.endDate.isBlank()){
-            return PermitResponse(
-                success = false,
-                message = "Las fechas de inicio y fin son requeridas"
-            )
+class CreatePermitUseCase(private val db: PermitRepository) {
+    
+    suspend fun execute(permit: Permition): Permition {
+        if (permit.description.isBlank()) {
+            throw IllegalArgumentException("La descripción es obligatoria")
         }
-    }
-
-    //Validar que la fecha de fin sea posterior a  la fecha de inicio
-    try{
-        val formatter = DateTimeFormatter.ofPattern(pattern = "yyyy-MM-dd")
-        val startDate = LocalDate.parse(text=request.startDate, formatter)
-        val endDate = LocalDate.parse(text = request.endDate, formatter)
-
-        if (endDate.isBefore(other= startDate)){
-            return PermitResponse(
-                success = false,
-                message = "La fecha de fin no puede ser anterior a la fecha de inicio"
-            )
-        }catch (e: Exeption){
-            return PermitResponse(
-                sucess = false,
-                message = "Formato de fecha inváido. Use el formati yyy-MM-dd"
-            )
+        
+        if (permit.startDate.isAfter(permit.endDate)) {
+            throw IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin")
         }
-
-        val permit =repository.createPermit(request)
-
-        return if (permit != null){
-            PermitResponse(
-                success = true,
-                message = "Permiso creado exitosamente"
-                data = permit
-            )
-        }else{
-            PermitResponse(
-                success = false,
-                message = "Error al crear el permiso"
-            )
+        
+        if (permit.endDate.isBefore(permit.startDate)) {
+            throw IllegalArgumentException("La fecha de fin no puede ser anterior a la fecha de inicio")
         }
+        
+        val permitWithDate = permit.copy(requestDate = LocalDateTime.now())
+        
+        return db.save(permitWithDate)
     }
 }

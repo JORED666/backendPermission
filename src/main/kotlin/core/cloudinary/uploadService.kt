@@ -3,29 +3,51 @@ package core.cloudinary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 class CloudinaryService {
     
     companion object {
-        /**
-         * Sube un archivo a Cloudinary desde un Buffer/ByteArray
-         * @param fileBytes Los bytes del archivo
-         * @param folder La carpeta en Cloudinary (default: "evidences")
-         * @return La URL segura del archivo subido
-         */
-        suspend fun uploadFile(fileBytes: ByteArray, folder: String = "evidences"): String {
+        private fun detectResourceType(fileName: String?): String {
+            val extension = fileName?.substringAfterLast(".", "")?.lowercase() ?: ""
+            return when (extension) {
+                "jpg", "jpeg", "png", "gif", "bmp", "webp", "svg" -> "image"
+                "mp4", "mov", "avi", "mkv", "webm" -> "video"
+                "mp3", "wav", "ogg" -> "video"
+                else -> "raw"
+            }
+        }
+
+        private fun convertToViewUrl(url: String, fileName: String?): String {
+                if (fileName?.endsWith(".pdf", ignoreCase = true) == true) {
+                val encodedUrl = URLEncoder.encode(url, StandardCharsets.UTF_8.toString())
+                return "https://mozilla.github.io/pdf.js/web/viewer.html?file=$encodedUrl"
+            }
+            return url
+        }
+        
+        suspend fun uploadFile(
+            fileBytes: ByteArray, 
+            folder: String = "evidences",
+            fileName: String? = null
+        ): String {
             return withContext(Dispatchers.IO) {
                 try {
+                    val resourceType = detectResourceType(fileName)
+                    
                     val uploadResult = CloudinaryConfig.cloudinary.uploader().upload(
                         fileBytes,
                         mapOf(
                             "folder" to folder,
-                            "resource_type" to "auto"
+                            "resource_type" to resourceType
                         )
                     )
                     
-                    uploadResult["secure_url"] as? String 
+                    val url = uploadResult["secure_url"] as? String 
                         ?: throw IllegalStateException("No se pudo obtener la URL del archivo")
+                    
+                    convertToViewUrl(url, fileName)
                         
                 } catch (e: Exception) {
                     throw Exception("Error al subir archivo a Cloudinary: ${e.message}", e)
@@ -33,56 +55,55 @@ class CloudinaryService {
             }
         }
         
-        /**
-         * Sube un archivo a Cloudinary desde un File
-         * @param file El archivo a subir
-         * @param folder La carpeta en Cloudinary (default: "evidences")
-         * @return La URL segura del archivo subido
-         */
         suspend fun uploadFileFromFile(file: File, folder: String = "evidences"): String {
             return withContext(Dispatchers.IO) {
                 try {
+                    val resourceType = detectResourceType(file.name)
+                    
                     val uploadResult = CloudinaryConfig.cloudinary.uploader().upload(
                         file,
                         mapOf(
                             "folder" to folder,
-                            "resource_type" to "auto"
+                            "resource_type" to resourceType
                         )
                     )
                     
-                    uploadResult["secure_url"] as? String 
+                    val url = uploadResult["secure_url"] as? String 
                         ?: throw IllegalStateException("No se pudo obtener la URL del archivo")
+                    
+                    convertToViewUrl(url, file.name)
                         
                 } catch (e: Exception) {
                     throw Exception("Error al subir archivo a Cloudinary: ${e.message}", e)
                 }
             }
         }
-        
-        /**
-         * Métodos específicos para evidencias
-         */
-        suspend fun uploadEvidence(fileBytes: ByteArray): String {
-            return uploadFile(fileBytes, "evidences")
+
+        suspend fun uploadEvidence(fileBytes: ByteArray, fileName: String? = null): String {
+            return uploadFile(fileBytes, "permits/evidences", fileName)
         }
         
-        /**
-         * Método específico para avatares de usuarios
-         */
-        suspend fun uploadAvatar(fileBytes: ByteArray): String {
-            return uploadFile(fileBytes, "avatars")
+        suspend fun uploadAvatar(fileBytes: ByteArray, fileName: String? = null): String {
+            return uploadFile(fileBytes, "avatars", fileName)
         }
         
-        /**
-         * Elimina un archivo de Cloudinary usando su URL
-         * @param fileUrl La URL completa del archivo
-         */
         suspend fun deleteFile(fileUrl: String) {
             return withContext(Dispatchers.IO) {
                 try {
-                    val publicId = extractPublicId(fileUrl)
+                    val actualUrl = if (fileUrl.contains("mozilla.github.io/pdf.js")) {
+                        val urlParam = fileUrl.substringAfter("file=")
+                        java.net.URLDecoder.decode(urlParam, StandardCharsets.UTF_8.toString())
+                    } else {
+                        fileUrl
+                    }
                     
-                    CloudinaryConfig.cloudinary.uploader().destroy(publicId, emptyMap<String, Any>())
+                    val publicId = extractPublicId(actualUrl)
+                    val resourceType = extractResourceType(actualUrl)
+                    
+                    CloudinaryConfig.cloudinary.uploader().destroy(
+                        publicId, 
+                        mapOf("resource_type" to resourceType)
+                    )
                     
                     println("Archivo eliminado de Cloudinary: $publicId")
                     
@@ -93,18 +114,28 @@ class CloudinaryService {
             }
         }
         
-        /**
-         * Extrae el public_id de una URL de Cloudinary
-         * Ejemplo: https://res.cloudinary.com/demo/image/upload/v1234/evidences/image.jpg
-         * Retorna: evidences/image
-         */
+        private fun extractResourceType(imageUrl: String): String {
+            return when {
+                imageUrl.contains("/image/upload/") -> "image"
+                imageUrl.contains("/video/upload/") -> "video"
+                imageUrl.contains("/raw/upload/") -> "raw"
+                else -> "image"
+            }
+        }
+        
         private fun extractPublicId(imageUrl: String): String {
-            val parts = imageUrl.split("/")
-            val fileNameWithExtension = parts.last()
-            val fileName = fileNameWithExtension.substringBeforeLast(".")
-            val folder = parts[parts.size - 2]
+            val cleanUrl = imageUrl.split("/upload/").lastOrNull() ?: return ""
+            val parts = cleanUrl.split("/")
             
-            return "$folder/$fileName"
+            val pathStart = parts.indexOfFirst { it.startsWith("v") && it.length > 1 } + 1
+            if (pathStart <= 0 || pathStart >= parts.size) return ""
+            
+            val pathParts = parts.subList(pathStart, parts.size)
+            val fileNameWithExtension = pathParts.last()
+            val fileName = fileNameWithExtension.substringBeforeLast(".")
+            val folder = pathParts.dropLast(1).joinToString("/")
+            
+            return if (folder.isNotEmpty()) "$folder/$fileName" else fileName
         }
     }
 }
