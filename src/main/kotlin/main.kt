@@ -8,6 +8,8 @@ import io.ktor.http.*
 import core.getDBPool
 import users.infrastructure.initUsers
 import users.infrastructure.routes.configureUserRoutes
+import tutors.infrastructure.initTutors
+import tutors.infrastructure.routes.configureTutorRoutes
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
@@ -44,6 +46,15 @@ fun Application.module() {
         userDependencies.updateUserController,
         userDependencies.deleteUserController,
         userDependencies.authController
+    )
+
+    val tutorDependencies = initTutors(dbConnection)
+    configureTutorRoutes(
+        tutorDependencies.createTutorController, 
+        tutorDependencies.getAllTutorsController, 
+        tutorDependencies.getTutorByIdController, 
+        tutorDependencies.updateTutorController, 
+        tutorDependencies.deleteTutorController
     )
 
     val port = environment.config.propertyOrNull("ktor.deployment.port")?.getString() ?: "8080"

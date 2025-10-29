@@ -11,7 +11,6 @@ data class UserResponse(
     val apellido_materno: String?,
     val email: String,
     val rol_id: Int,
-    val avatar: String? = null,
     val fecha_registro: String 
 ) {
     companion object {
@@ -23,7 +22,6 @@ data class UserResponse(
                 apellido_materno = user.secondLastName,
                 email = user.email,
                 rol_id = user.roleId,
-                avatar = null,
                 fecha_registro = user.registrationDate.toString()
             )
         }
