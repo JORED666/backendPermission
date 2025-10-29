@@ -28,6 +28,7 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("com.cloudinary:cloudinary-http44:1.36.0")
     
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
