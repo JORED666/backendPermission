@@ -12,6 +12,8 @@ import tutors.infrastructure.initTutors
 import tutors.infrastructure.routes.configureTutorRoutes
 import permition.infrastructure.initPermits
 import permition.infrastructure.routes.configurePermitRoutes
+import teachers.infrastructure.initTeachers
+import teachers.infrastructure.routes.configureTeacherRoutes
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
@@ -66,6 +68,15 @@ fun Application.module() {
         permitionDependencies.getPermitByIdController, 
         permitionDependencies.updatePermitController, 
         permitionDependencies.deletePermitController
+    )
+
+    val teacherDependencies = initTeachers(dbConnection)
+    configureTeacherRoutes(
+        teacherDependencies.createTeacherController, 
+        teacherDependencies.getAllTeacherController, 
+        teacherDependencies.getTeacherByIdController, 
+        teacherDependencies.updateTeacherController, 
+        teacherDependencies.deleteTeacherController
     )
 
     val port = environment.config.propertyOrNull("ktor.deployment.port")?.getString() ?: "8080"
