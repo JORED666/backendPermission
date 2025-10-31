@@ -3,18 +3,18 @@ package permition.infrastructure.controllers
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
-import permition.application.GetAllPermitsUseCase
+import permition.application.GetAllPermitsWithDetailsUseCase
 import permition.domain.dto.*
 
 class GetAllPermitsController(
-    private val getAllPermits: GetAllPermitsUseCase
+    private val getAllPermitsWithDetails: GetAllPermitsWithDetailsUseCase
 ) {
     suspend fun execute(call: ApplicationCall) {
         try {
-            val permits = getAllPermits.execute()
+            val permits = getAllPermitsWithDetails.execute()
             
             call.respond(HttpStatusCode.OK, PermitListResponse(
-                permits = permits.map { PermitResponse.fromPermit(it) },
+                permits = permits.map { PermitWithDetailsResponse.fromPermitWithDetails(it) },
                 total = permits.size
             ))
         } catch (error: Exception) {

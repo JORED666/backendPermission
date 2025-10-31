@@ -19,8 +19,16 @@ class CreatePermitUseCase(private val db: PermitRepository) {
             throw IllegalArgumentException("La fecha de fin no puede ser anterior a la fecha de inicio")
         }
         
+        if (permit.teacherIds.isEmpty()) {  
+            throw IllegalArgumentException("Debe seleccionar al menos un profesor")
+        }
+        
         val permitWithDate = permit.copy(requestDate = LocalDateTime.now())
         
-        return db.save(permitWithDate)
+        val savedPermit = db.save(permitWithDate)
+        
+        db.savePermitTeachers(savedPermit.permitId!!, permit.teacherIds) 
+        
+        return savedPermit
     }
 }

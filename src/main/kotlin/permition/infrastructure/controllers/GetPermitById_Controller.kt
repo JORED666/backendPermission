@@ -3,11 +3,11 @@ package permition.infrastructure.controllers
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
-import permition.application.GetPermitByIdUseCase
+import permition.application.GetPermitByIdWithDetailsUseCase
 import permition.domain.dto.*
 
 class GetPermitByIdController(
-    private val getPermitById: GetPermitByIdUseCase
+    private val getPermitByIdWithDetails: GetPermitByIdWithDetailsUseCase
 ) {
     suspend fun execute(call: ApplicationCall) {
         try {
@@ -18,7 +18,7 @@ class GetPermitByIdController(
                 return
             }
             
-            val permit = getPermitById.execute(id)
+            val permit = getPermitByIdWithDetails.execute(id)
             
             if (permit == null) {
                 call.respond(HttpStatusCode.NotFound, ErrorResponse("Permiso no encontrado"))
@@ -26,7 +26,7 @@ class GetPermitByIdController(
             }
             
             call.respond(HttpStatusCode.OK, SinglePermitResponse(
-                permit = PermitResponse.fromPermit(permit)
+                permit = PermitWithDetailsResponse.fromPermitWithDetails(permit)
             ))
         } catch (error: Exception) {
             call.respond(

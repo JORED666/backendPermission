@@ -37,10 +37,12 @@ class UpdatePermitController(
             
             var studentId: Int? = null
             var tutorId: Int? = null
+            var teacherIds: List<Int> = emptyList()
             var startDate: String? = null
             var endDate: String? = null
             var reason: String? = null
             var description: String? = null
+            var cuatrimestre: Int? = null 
             var status: String? = null
             var evidenceUrl: String? = existingPermit.evidence
             var validationError: String? = null
@@ -52,10 +54,15 @@ class UpdatePermitController(
                         when (part.name) {
                             "studentId" -> studentId = part.value.toIntOrNull()
                             "tutorId" -> tutorId = part.value.toIntOrNull()
+                            "teacherIds" -> {
+                                teacherIds = part.value.split(",")
+                                    .mapNotNull { it.trim().toIntOrNull() }
+                            }
                             "startDate" -> startDate = part.value
                             "endDate" -> endDate = part.value
                             "reason" -> reason = part.value
                             "description" -> description = part.value
+                            "cuatrimestre" -> cuatrimestre = part.value.toIntOrNull()  
                             "status" -> status = part.value
                         }
                     }
@@ -91,8 +98,13 @@ class UpdatePermitController(
             }
             
             if (studentId == null || tutorId == null || startDate == null || endDate == null || 
-                reason == null || description == null || status == null) {
+                reason == null || description == null || cuatrimestre == null || status == null) { 
                 call.respond(HttpStatusCode.BadRequest, ErrorResponse("Faltan campos requeridos"))
+                return
+            }
+
+            if (cuatrimestre!! !in 1..11) {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("El cuatrimestre debe estar entre 1 y 11"))
                 return
             }
 
@@ -100,10 +112,12 @@ class UpdatePermitController(
                 permitId = id,
                 studentId = studentId!!,
                 tutorId = tutorId!!,
+                teacherIds = teacherIds,
                 startDate = LocalDate.parse(startDate),
                 endDate = LocalDate.parse(endDate),
                 reason = PermitReason.fromString(reason!!),
                 description = description!!,
+                cuatrimestre = cuatrimestre!!, 
                 evidence = evidenceUrl,
                 status = PermitStatus.fromString(status!!),
                 requestDate = existingPermit.requestDate

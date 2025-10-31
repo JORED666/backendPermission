@@ -2,7 +2,7 @@ package permition.application
 
 import permition.domain.PermitRepository
 import permition.domain.entities.Permition
-import permition.domain.entities.PermitStatus 
+import permition.domain.entities.PermitStatus
 
 class UpdatePermitUseCase(private val db: PermitRepository) {
     
@@ -22,6 +22,12 @@ class UpdatePermitUseCase(private val db: PermitRepository) {
             throw IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin")
         }
         
+        if (permit.teacherIds.isEmpty()) {  
+            throw IllegalArgumentException("Debe seleccionar al menos un profesor")
+        }
+        
         db.update(permit)
+        
+        db.updatePermitTeachers(permit.permitId, permit.teacherIds) 
     }
 }

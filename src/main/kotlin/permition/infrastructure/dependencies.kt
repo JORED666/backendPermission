@@ -1,6 +1,7 @@
 package permition.infrastructure
 
 import core.ConnMySQL
+import permition.domain.PermitRepository
 import permition.infrastructure.adapters.MySQLPermitRepository
 import permition.application.*
 import permition.infrastructure.controllers.*
@@ -14,18 +15,19 @@ data class DependenciesPermits(
 )
 
 fun initPermits(conn: ConnMySQL): DependenciesPermits {
-    val permitRepository = MySQLPermitRepository(conn)
+    val permitRepository: PermitRepository = MySQLPermitRepository(conn)
     
     val createPermitUseCase = CreatePermitUseCase(permitRepository)
-    val getAllPermitsUseCase = GetAllPermitsUseCase(permitRepository)
+    val getAllPermitsWithDetailsUseCase = GetAllPermitsWithDetailsUseCase(permitRepository)
+    val getPermitByIdWithDetailsUseCase = GetPermitByIdWithDetailsUseCase(permitRepository)
     val getPermitByIdUseCase = GetPermitByIdUseCase(permitRepository)
     val updatePermitUseCase = UpdatePermitUseCase(permitRepository)
     val deletePermitUseCase = DeletePermitUseCase(permitRepository)
 
     return DependenciesPermits(
-        createPermitController = CreatePermitController(createPermitUseCase),
-        getAllPermitsController = GetAllPermitsController(getAllPermitsUseCase),
-        getPermitByIdController = GetPermitByIdController(getPermitByIdUseCase),
+        createPermitController = CreatePermitController(createPermitUseCase, getPermitByIdWithDetailsUseCase),
+        getAllPermitsController = GetAllPermitsController(getAllPermitsWithDetailsUseCase),
+        getPermitByIdController = GetPermitByIdController(getPermitByIdWithDetailsUseCase),
         updatePermitController = UpdatePermitController(updatePermitUseCase, getPermitByIdUseCase),
         deletePermitController = DeletePermitController(deletePermitUseCase)
     )

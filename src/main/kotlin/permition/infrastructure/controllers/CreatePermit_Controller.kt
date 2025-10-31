@@ -6,6 +6,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import permition.application.CreatePermitUseCase
+import permition.application.GetPermitByIdWithDetailsUseCase 
 import permition.domain.entities.Permition
 import permition.domain.entities.PermitReason
 import permition.domain.entities.PermitStatus
@@ -15,7 +16,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 class CreatePermitController(
-    private val createPermit: CreatePermitUseCase
+    private val createPermit: CreatePermitUseCase,
+    private val getPermitByIdWithDetails: GetPermitByIdWithDetailsUseCase 
 ) {
     
     suspend fun execute(call: ApplicationCall) {
@@ -24,10 +26,12 @@ class CreatePermitController(
             
             var studentId: Int? = null
             var tutorId: Int? = null
+            var teacherIds: List<Int> = emptyList()
             var startDate: String? = null
             var endDate: String? = null
             var reason: String? = null
             var description: String? = null
+            var cuatrimestre: Int? = null
             var evidenceUrl: String? = null
             var validationError: String? = null
             
@@ -37,10 +41,15 @@ class CreatePermitController(
                         when (part.name) {
                             "studentId" -> studentId = part.value.toIntOrNull()
                             "tutorId" -> tutorId = part.value.toIntOrNull()
+                            "teacherIds" -> {
+                                teacherIds = part.value.split(",")
+                                    .mapNotNull { it.trim().toIntOrNull() }
+                            }
                             "startDate" -> startDate = part.value
                             "endDate" -> endDate = part.value
                             "reason" -> reason = part.value
                             "description" -> description = part.value
+                            "cuatrimestre" -> cuatrimestre = part.value.toIntOrNull()
                         }
                     }
                     is PartData.FileItem -> {
@@ -52,7 +61,7 @@ class CreatePermitController(
                             if (contentType != "application" || part.contentType?.contentSubtype != "pdf") {
                                 validationError = "Solo se permiten archivos PDF"
                                 part.dispose()
-                                return@forEachPart 
+                                return@forEachPart
                             }
                             
                             evidenceUrl = CloudinaryService.uploadFile(
@@ -73,18 +82,25 @@ class CreatePermitController(
             }
             
             if (studentId == null || tutorId == null || startDate == null || endDate == null || 
-                reason == null || description == null) {
+                reason == null || description == null || cuatrimestre == null) {
                 call.respond(HttpStatusCode.BadRequest, ErrorResponse("Faltan campos requeridos"))
+                return
+            }
+
+            if (cuatrimestre!! !in 1..11) {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("El cuatrimestre debe estar entre 1 y 11"))
                 return
             }
 
             val permit = Permition(
                 studentId = studentId!!,
                 tutorId = tutorId!!,
+                teacherIds = teacherIds,
                 startDate = LocalDate.parse(startDate),
                 endDate = LocalDate.parse(endDate),
                 reason = PermitReason.fromString(reason!!),
                 description = description!!,
+                cuatrimestre = cuatrimestre!!,
                 evidence = evidenceUrl,
                 status = PermitStatus.PENDING,
                 requestDate = LocalDateTime.now()
@@ -92,9 +108,16 @@ class CreatePermitController(
 
             val savedPermit = createPermit.execute(permit)
 
-            call.respond(HttpStatusCode.Created, CreatePermitResponse(
+            val permitWithDetails = getPermitByIdWithDetails.execute(savedPermit.permitId!!)
+            
+            if (permitWithDetails == null) {
+                call.respond(HttpStatusCode.InternalServerError, ErrorResponse("Error al obtener detalles del permiso"))
+                return
+            }
+
+            call.respond(HttpStatusCode.Created, CreatePermitWithDetailsResponse(
                 message = "Permiso creado exitosamente",
-                permit = PermitResponse.fromPermit(savedPermit)
+                permit = PermitWithDetailsResponse.fromPermitWithDetails(permitWithDetails)
             ))
         } catch (error: IllegalArgumentException) {
             call.respond(
