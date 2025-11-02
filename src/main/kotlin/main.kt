@@ -18,6 +18,8 @@ import students.infrastructure.initStudents
 import students.infrastructure.routes.configureStudentRoutes
 import permitsTeacher.infrastructure.initPermitTeacher
 import permitsTeacher.infrastructure.routes.configurePermitTeacherRoutes
+import history.infrastructure.initHistory
+import history.infrastructure.routes.configureHistoryRoutes
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
@@ -93,12 +95,21 @@ fun Application.module() {
         studentDependencies.deleteStudentController
     )
 
-    val permitsTeacher = initPermitTeacher(dbConnection)
+    val permitsTeacherDependencies = initPermitTeacher(dbConnection)
     configurePermitTeacherRoutes(
-        permitsTeacher.createPermitTeacherController, 
-        permitsTeacher.getAllPermitTeacherController, 
-        permitsTeacher.getPermitTeacherByIdController, 
-        permitsTeacher.deletePermitTeacherController
+        permitsTeacherDependencies.createPermitTeacherController, 
+        permitsTeacherDependencies.getAllPermitTeacherController, 
+        permitsTeacherDependencies.getPermitTeacherByIdController, 
+        permitsTeacherDependencies.deletePermitTeacherController
+    )
+
+    val historyDependencies = initHistory(dbConnection)
+    configureHistoryRoutes(
+        historyDependencies.createHistoryController, 
+        historyDependencies.getAllHistoryController, 
+        historyDependencies.getHistoryByIdController, 
+        historyDependencies.getHistoryByStudentController, 
+        historyDependencies.updateHistoryStatusController
     )
 
     val port = environment.config.propertyOrNull("ktor.deployment.port")?.getString() ?: "8080"
