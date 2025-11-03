@@ -12,12 +12,14 @@ import permition.domain.entities.PermitReason
 import permition.domain.entities.PermitStatus
 import permition.domain.dto.*
 import core.cloudinary.CloudinaryService
+import notify.application.NotificationService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class CreatePermitController(
     private val createPermit: CreatePermitUseCase,
-    private val getPermitByIdWithDetails: GetPermitByIdWithDetailsUseCase 
+    private val getPermitByIdWithDetails: GetPermitByIdWithDetailsUseCase,
+    private val notificationService: NotificationService
 ) {
     
     suspend fun execute(call: ApplicationCall) {
@@ -107,6 +109,17 @@ class CreatePermitController(
             )
 
             val savedPermit = createPermit.execute(permit)
+
+            try {
+                notificationService.notifyTutorNewPermit(
+                    studentId = savedPermit.studentId,
+                    permitId = savedPermit.permitId!!,
+                    studentName = "Estudiante"
+                )
+                println("Notificacion enviada al tutor")
+            } catch (e: Exception) {
+                println("Error enviando notificacion al tutor: ${e.message}")
+            }
 
             val permitWithDetails = getPermitByIdWithDetails.execute(savedPermit.permitId!!)
             

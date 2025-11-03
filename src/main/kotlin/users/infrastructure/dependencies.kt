@@ -2,18 +2,8 @@ package users.infrastructure
 
 import core.ConnMySQL
 import users.infrastructure.adapters.MySQLUserRepository
-import users.application.AuthServiceUseCase
-import users.application.CreateUserUseCase
-import users.application.GetAllUsersUseCase
-import users.application.GetUserByIdUseCase
-import users.application.UpdateUserUseCase
-import users.application.DeleteUserUseCase
-import users.infrastructure.controller.AuthController
-import users.infrastructure.controller.CreateUserController
-import users.infrastructure.controller.GetAllUsersController
-import users.infrastructure.controller.GetUserByIdController
-import users.infrastructure.controller.UpdateUserController
-import users.infrastructure.controller.DeleteUserController
+import users.application.*
+import users.infrastructure.controller.*
 
 data class DependenciesUsers(
     val createUserController: CreateUserController,
@@ -21,13 +11,26 @@ data class DependenciesUsers(
     val getByIdUserController: GetUserByIdController,
     val updateUserController: UpdateUserController,
     val deleteUserController: DeleteUserController,
-    val authController: AuthController
+    val authController: AuthController,
+    val googleOAuthController: GoogleOAuth_Controller,
+    val gitHubOAuthController: GitHubOAuth_Controller
 )
 
-fun initUsers(conn: ConnMySQL): DependenciesUsers {
+fun initUsers(
+    conn: ConnMySQL,
+    googleClientId: String,
+    googleClientSecret: String,
+    googleRedirectUrl: String,
+    githubClientId: String,
+    githubClientSecret: String,
+    githubRedirectUrl: String,
+    frontendUrl: String = "http://localhost:5173"
+): DependenciesUsers {
+    
     val userRepository = MySQLUserRepository(conn)
     
     val authService = AuthServiceUseCase(userRepository)
+    val oauthUseCase = OAuthUseCase(userRepository)
     val createUserUseCase = CreateUserUseCase(userRepository)
     val getAllUsersUseCase = GetAllUsersUseCase(userRepository)
     val getUserByIdUseCase = GetUserByIdUseCase(userRepository)
@@ -40,6 +43,20 @@ fun initUsers(conn: ConnMySQL): DependenciesUsers {
         getByIdUserController = GetUserByIdController(getUserByIdUseCase),
         updateUserController = UpdateUserController(updateUserUseCase),
         deleteUserController = DeleteUserController(deleteUserUseCase),
-        authController = AuthController(authService)
+        authController = AuthController(authService),
+        googleOAuthController = GoogleOAuth_Controller(
+            oauthUseCase = oauthUseCase,
+            clientId = googleClientId,
+            clientSecret = googleClientSecret,
+            redirectUri = googleRedirectUrl,
+            frontendUrl = frontendUrl
+        ),
+        gitHubOAuthController = GitHubOAuth_Controller(
+            oauthUseCase = oauthUseCase,
+            clientId = githubClientId,
+            clientSecret = githubClientSecret,
+            redirectUri = githubRedirectUrl,
+            frontendUrl = frontendUrl
+        )
     )
 }

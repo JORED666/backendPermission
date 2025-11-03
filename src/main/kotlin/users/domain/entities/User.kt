@@ -10,7 +10,9 @@ data class User(
     val secondLastName: String? = null,
     val email: String,
     val phone: String? = null,
-    val password: String,
+    val password: String, // Puede estar vacío para usuarios OAuth
     val registrationDate: LocalDateTime = LocalDateTime.now(),
-    val roleId: Int
+    val roleId: Int,
+    val oauthProvider: String? = null, // "google", "github", o null para usuarios normales
+    val oauthId: String? = null // ID único del usuario en el proveedor OAuth
 )

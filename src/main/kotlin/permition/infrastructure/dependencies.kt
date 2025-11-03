@@ -5,6 +5,7 @@ import permition.domain.PermitRepository
 import permition.infrastructure.adapters.MySQLPermitRepository
 import permition.application.*
 import permition.infrastructure.controllers.*
+import notify.application.NotificationService
 
 data class DependenciesPermits(
     val createPermitController: CreatePermitController,
@@ -14,7 +15,10 @@ data class DependenciesPermits(
     val deletePermitController: DeletePermitController
 )
 
-fun initPermits(conn: ConnMySQL): DependenciesPermits {
+fun initPermits(
+    conn: ConnMySQL,
+    notificationService: NotificationService
+): DependenciesPermits {
     val permitRepository: PermitRepository = MySQLPermitRepository(conn)
     
     val createPermitUseCase = CreatePermitUseCase(permitRepository)
@@ -25,10 +29,18 @@ fun initPermits(conn: ConnMySQL): DependenciesPermits {
     val deletePermitUseCase = DeletePermitUseCase(permitRepository)
 
     return DependenciesPermits(
-        createPermitController = CreatePermitController(createPermitUseCase, getPermitByIdWithDetailsUseCase),
+        createPermitController = CreatePermitController(
+            createPermitUseCase, 
+            getPermitByIdWithDetailsUseCase,
+            notificationService
+        ),
         getAllPermitsController = GetAllPermitsController(getAllPermitsWithDetailsUseCase),
         getPermitByIdController = GetPermitByIdController(getPermitByIdWithDetailsUseCase),
-        updatePermitController = UpdatePermitController(updatePermitUseCase, getPermitByIdUseCase),
+        updatePermitController = UpdatePermitController(
+            updatePermitUseCase, 
+            getPermitByIdUseCase,
+            notificationService
+        ),
         deletePermitController = DeletePermitController(deletePermitUseCase)
     )
 }

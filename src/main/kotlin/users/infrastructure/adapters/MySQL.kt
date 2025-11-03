@@ -10,8 +10,8 @@ class MySQLUserRepository(private val conn: ConnMySQL) : IUserRepository {
     
     override suspend fun save(user: User): User {
         val query = """
-            INSERT INTO users (first_name, middle_name, last_name, second_last_name, email, phone, password, registration_date, role_id) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO users (first_name, middle_name, last_name, second_last_name, email, phone, password, registration_date, role_id, oauth_provider, oauth_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
 
         try {
@@ -27,6 +27,8 @@ class MySQLUserRepository(private val conn: ConnMySQL) : IUserRepository {
             statement.setString(7, user.password)
             statement.setTimestamp(8, Timestamp.valueOf(user.registrationDate))
             statement.setInt(9, user.roleId)
+            statement.setString(10, user.oauthProvider)  // NUEVO
+            statement.setString(11, user.oauthId)        // NUEVO
             
             statement.executeUpdate()
             
@@ -44,7 +46,7 @@ class MySQLUserRepository(private val conn: ConnMySQL) : IUserRepository {
 
     override suspend fun getByEmail(email: String): User? {
         val query = """
-            SELECT user_id, first_name, middle_name, last_name, second_last_name, email, phone, password, registration_date, role_id 
+            SELECT user_id, first_name, middle_name, last_name, second_last_name, email, phone, password, registration_date, role_id, oauth_provider, oauth_id
             FROM users 
             WHERE email = ?
         """
@@ -68,18 +70,59 @@ class MySQLUserRepository(private val conn: ConnMySQL) : IUserRepository {
                 secondLastName = resultSet.getString("second_last_name"),
                 email = resultSet.getString("email"),
                 phone = resultSet.getString("phone"),
-                password = resultSet.getString("password"),
+                password = resultSet.getString("password") ?: "",  // Manejar NULL para usuarios OAuth
                 registrationDate = resultSet.getTimestamp("registration_date").toLocalDateTime(),
-                roleId = resultSet.getInt("role_id")
+                roleId = resultSet.getInt("role_id"),
+                oauthProvider = resultSet.getString("oauth_provider"),  // NUEVO
+                oauthId = resultSet.getString("oauth_id")               // NUEVO
             )
         } catch (error: Exception) {
             throw Exception("Failed to get user by email: ${error.message}")
         }
     }
 
+    // ==================== MÉTODO NUEVO PARA OAUTH ====================
+    override suspend fun getByOAuthId(provider: String, oauthId: String): User? {
+        val query = """
+            SELECT user_id, first_name, middle_name, last_name, second_last_name, email, phone, password, registration_date, role_id, oauth_provider, oauth_id
+            FROM users 
+            WHERE oauth_provider = ? AND oauth_id = ?
+        """
+
+        try {
+            val connection = conn.getConnection()
+            val statement = connection.prepareStatement(query)
+            statement.setString(1, provider)
+            statement.setString(2, oauthId)
+            
+            val resultSet = statement.executeQuery()
+
+            if (!resultSet.next()) {
+                return null
+            }
+
+            return User(
+                userId = resultSet.getInt("user_id"),
+                firstName = resultSet.getString("first_name"),
+                middleName = resultSet.getString("middle_name"),
+                lastName = resultSet.getString("last_name"),
+                secondLastName = resultSet.getString("second_last_name"),
+                email = resultSet.getString("email"),
+                phone = resultSet.getString("phone"),
+                password = resultSet.getString("password") ?: "",
+                registrationDate = resultSet.getTimestamp("registration_date").toLocalDateTime(),
+                roleId = resultSet.getInt("role_id"),
+                oauthProvider = resultSet.getString("oauth_provider"),
+                oauthId = resultSet.getString("oauth_id")
+            )
+        } catch (error: Exception) {
+            throw Exception("Failed to get user by OAuth ID: ${error.message}")
+        }
+    }
+
     override suspend fun getAll(): List<User> {
         val query = """
-            SELECT user_id, first_name, middle_name, last_name, second_last_name, email, phone, password, registration_date, role_id 
+            SELECT user_id, first_name, middle_name, last_name, second_last_name, email, phone, password, registration_date, role_id, oauth_provider, oauth_id
             FROM users 
             ORDER BY registration_date DESC
         """
@@ -100,9 +143,11 @@ class MySQLUserRepository(private val conn: ConnMySQL) : IUserRepository {
                     secondLastName = resultSet.getString("second_last_name"),
                     email = resultSet.getString("email"),
                     phone = resultSet.getString("phone"),
-                    password = resultSet.getString("password"),
+                    password = resultSet.getString("password") ?: "",
                     registrationDate = resultSet.getTimestamp("registration_date").toLocalDateTime(),
-                    roleId = resultSet.getInt("role_id")
+                    roleId = resultSet.getInt("role_id"),
+                    oauthProvider = resultSet.getString("oauth_provider"),  // NUEVO
+                    oauthId = resultSet.getString("oauth_id")               // NUEVO
                 ))
             }
             
@@ -114,7 +159,7 @@ class MySQLUserRepository(private val conn: ConnMySQL) : IUserRepository {
 
     override suspend fun getById(id: Int): User? {
         val query = """
-            SELECT user_id, first_name, middle_name, last_name, second_last_name, email, phone, password, registration_date, role_id 
+            SELECT user_id, first_name, middle_name, last_name, second_last_name, email, phone, password, registration_date, role_id, oauth_provider, oauth_id
             FROM users 
             WHERE user_id = ?
         """
@@ -138,9 +183,11 @@ class MySQLUserRepository(private val conn: ConnMySQL) : IUserRepository {
                 secondLastName = resultSet.getString("second_last_name"),
                 email = resultSet.getString("email"),
                 phone = resultSet.getString("phone"),
-                password = resultSet.getString("password"),
+                password = resultSet.getString("password") ?: "",
                 registrationDate = resultSet.getTimestamp("registration_date").toLocalDateTime(),
-                roleId = resultSet.getInt("role_id")
+                roleId = resultSet.getInt("role_id"),
+                oauthProvider = resultSet.getString("oauth_provider"),  // NUEVO
+                oauthId = resultSet.getString("oauth_id")               // NUEVO
             )
         } catch (error: Exception) {
             throw Exception("Failed to get user by id: ${error.message}")
@@ -156,7 +203,9 @@ class MySQLUserRepository(private val conn: ConnMySQL) : IUserRepository {
                 second_last_name = ?, 
                 email = ?, 
                 phone = ?, 
-                role_id = ? 
+                role_id = ?,
+                oauth_provider = ?,
+                oauth_id = ?
             WHERE user_id = ?
         """
 
@@ -171,7 +220,9 @@ class MySQLUserRepository(private val conn: ConnMySQL) : IUserRepository {
             statement.setString(5, user.email)
             statement.setString(6, user.phone)
             statement.setInt(7, user.roleId)
-            statement.setInt(8, user.userId!!)
+            statement.setString(8, user.oauthProvider)  // NUEVO
+            statement.setString(9, user.oauthId)        // NUEVO
+            statement.setInt(10, user.userId!!)
             
             val rowsAffected = statement.executeUpdate()
 

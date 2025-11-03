@@ -10,7 +10,9 @@ fun Application.configureUserRoutes(
     getByIdUserController: GetUserByIdController,
     updateUserController: UpdateUserController,
     deleteUserController: DeleteUserController,
-    authController: AuthController
+    authController: AuthController,
+    googleOAuthController: GoogleOAuth_Controller,
+    gitHubOAuthController: GitHubOAuth_Controller
 ) {
     routing {
         route("/api") {
@@ -33,8 +35,25 @@ fun Application.configureUserRoutes(
             }
 
             route("/auth") {
+                // Login tradicional
                 post("/login") {
                     authController.execute(call)
+                }
+                
+                // GOOGLE OAUTH
+                get("/google") {
+                    googleOAuthController.login(call)
+                }
+                get("/google/callback") {
+                    googleOAuthController.callback(call)
+                }
+                
+                // GITHUB OAUTH
+                get("/github") {
+                    gitHubOAuthController.login(call)
+                }
+                get("/github/callback") {
+                    gitHubOAuthController.callback(call)
                 }
             }
         }

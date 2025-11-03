@@ -10,7 +10,8 @@ data class DependenciesPermitTeacher(
     val createPermitTeacherController: CreatePermitTeacherController,
     val getAllPermitTeacherController: GetAllPermitTeacherController,
     val getPermitTeacherByIdController: GetPermitTeacherByIdController,
-    val deletePermitTeacherController: DeletePermitTeacherController
+    val deletePermitTeacherController: DeletePermitTeacherController,
+    val permitTeacherRepository: IPermitTeacherRepository
 )
 
 fun initPermitTeacher(conn: ConnMySQL): DependenciesPermitTeacher {
@@ -25,6 +26,7 @@ fun initPermitTeacher(conn: ConnMySQL): DependenciesPermitTeacher {
         createPermitTeacherController = CreatePermitTeacherController(createPermitTeacherUseCase),
         getAllPermitTeacherController = GetAllPermitTeacherController(getAllPermitTeacherUseCase),
         getPermitTeacherByIdController = GetPermitTeacherByIdController(getPermitTeacherUseCase),
-        deletePermitTeacherController = DeletePermitTeacherController(deletePermitTeacherUseCase)
+        deletePermitTeacherController = DeletePermitTeacherController(deletePermitTeacherUseCase),
+        permitTeacherRepository = permitTeacherRepository
     )
 }

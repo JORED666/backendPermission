@@ -12,7 +12,8 @@ data class DependenciesStudents(
     val getStudentByIdController: GetStudentByIdController,
     val searchStudentController: SearchStudentController,
     val updateStudentController: UpdateStudentController,
-    val deleteStudentController: DeleteStudentController
+    val deleteStudentController: DeleteStudentController,
+    val studentRepository: IStudentRepository
 )
 
 fun initStudents(conn: ConnMySQL): DependenciesStudents {
@@ -31,6 +32,7 @@ fun initStudents(conn: ConnMySQL): DependenciesStudents {
         getStudentByIdController = GetStudentByIdController(getStudentByIdWithDetailsUseCase),
         searchStudentController = SearchStudentController(searchStudentUseCase),
         updateStudentController = UpdateStudentController(updateStudentUseCase),
-        deleteStudentController = DeleteStudentController(deleteStudentUseCase)
+        deleteStudentController = DeleteStudentController(deleteStudentUseCase),
+        studentRepository = studentRepository
     )
 }

@@ -12,11 +12,13 @@ import permition.domain.entities.PermitReason
 import permition.domain.entities.PermitStatus
 import permition.domain.dto.*
 import core.cloudinary.CloudinaryService
+import notify.application.NotificationService
 import java.time.LocalDate
 
 class UpdatePermitController(
     private val updatePermit: UpdatePermitUseCase,
-    private val getPermitById: GetPermitByIdUseCase
+    private val getPermitById: GetPermitByIdUseCase,
+    private val notificationService: NotificationService
 ) {
     suspend fun execute(call: ApplicationCall) {
         try {
@@ -125,11 +127,44 @@ class UpdatePermitController(
 
             updatePermit.execute(permit)
             
+            // Notificar según el cambio de estado
+            val oldStatus = existingPermit.status.toString()
+            if (oldStatus != status) {
+                try {
+                    if (status == "approved") {
+                        notificationService.notifyStudentPermitStatus(
+                            tutorId = permit.tutorId,
+                            studentId = permit.studentId,
+                            permitId = id,
+                            status = "approved"
+                        )
+                        println("Notificacion de aprobacion enviada al estudiante")
+                        
+                        notificationService.notifyTeachersPermitApproved(
+                            studentId = permit.studentId,
+                            permitId = id,
+                            studentName = "Estudiante"
+                        )
+                        println("Notificaciones enviadas a los profesores")
+                    } else if (status == "rejected") {
+                        notificationService.notifyStudentPermitStatus(
+                            tutorId = permit.tutorId,
+                            studentId = permit.studentId,
+                            permitId = id,
+                            status = "rejected"
+                        )
+                        println("Notificacion de rechazo enviada al estudiante")
+                    }
+                } catch (e: Exception) {
+                    println("Error enviando notificaciones: ${e.message}")
+                }
+            }
+            
             if (oldEvidenceUrl != null && oldEvidenceUrl != evidenceUrl) {
                 try {
                     CloudinaryService.deleteFile(oldEvidenceUrl!!)
                 } catch (e: Exception) {
-                    println("⚠️ No se pudo eliminar el archivo antiguo: ${e.message}")
+                    println("No se pudo eliminar el archivo antiguo: ${e.message}")
                 }
             }
 

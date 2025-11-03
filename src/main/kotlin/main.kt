@@ -4,7 +4,10 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.websocket.*
 import io.ktor.http.*
+import io.github.cdimascio.dotenv.dotenv
+import java.time.Duration
 import core.getDBPool
 import users.infrastructure.initUsers
 import users.infrastructure.routes.configureUserRoutes
@@ -20,12 +23,19 @@ import permitsTeacher.infrastructure.initPermitTeacher
 import permitsTeacher.infrastructure.routes.configurePermitTeacherRoutes
 import history.infrastructure.initHistory
 import history.infrastructure.routes.configureHistoryRoutes
+import notify.infrastructure.initNotify
+import notify.infrastructure.routes.configureNotificationRoutes
+import notify.infrastructure.websocket.configureNotificationWebSocket
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
 }
 
 fun Application.module() {
+    val dotenv = dotenv {
+        ignoreIfMissing = true
+    }
+    
     install(CORS) {
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
@@ -46,8 +56,25 @@ fun Application.module() {
         json()
     }
 
+    install(WebSockets) {
+        pingPeriod = Duration.ofSeconds(15)
+        timeout = Duration.ofSeconds(15)
+        maxFrameSize = Long.MAX_VALUE
+        masking = false
+    }
+
     val dbConnection = getDBPool()
-    val userDependencies = initUsers(dbConnection)
+    
+    val userDependencies = initUsers(
+        conn = dbConnection,
+        googleClientId = dotenv["GOOGLE_CLIENT_ID"] ?: "",
+        googleClientSecret = dotenv["GOOGLE_CLIENT_SECRET"] ?: "",
+        googleRedirectUrl = dotenv["GOOGLE_REDIRECT_URL"] ?: "http://localhost:8080/api/auth/google/callback",
+        githubClientId = dotenv["GITHUB_CLIENT_ID"] ?: "",
+        githubClientSecret = dotenv["GITHUB_CLIENT_SECRET"] ?: "",
+        githubRedirectUrl = dotenv["GITHUB_REDIRECT_URL"] ?: "http://localhost:8080/api/auth/github/callback",
+        frontendUrl = dotenv["FRONTEND_URL"] ?: "http://localhost:5173"
+    )
 
     configureUserRoutes(
         userDependencies.createUserController,
@@ -55,7 +82,9 @@ fun Application.module() {
         userDependencies.getByIdUserController,
         userDependencies.updateUserController,
         userDependencies.deleteUserController,
-        userDependencies.authController
+        userDependencies.authController,
+        userDependencies.googleOAuthController,
+        userDependencies.gitHubOAuthController
     )
 
     val tutorDependencies = initTutors(dbConnection)
@@ -65,15 +94,6 @@ fun Application.module() {
         tutorDependencies.getTutorByIdController, 
         tutorDependencies.updateTutorController, 
         tutorDependencies.deleteTutorController
-    )
-
-    val permitionDependencies = initPermits(dbConnection)
-    configurePermitRoutes(
-        permitionDependencies.createPermitController, 
-        permitionDependencies.getAllPermitsController, 
-        permitionDependencies.getPermitByIdController, 
-        permitionDependencies.updatePermitController, 
-        permitionDependencies.deletePermitController
     )
 
     val teacherDependencies = initTeachers(dbConnection)
@@ -112,6 +132,36 @@ fun Application.module() {
         historyDependencies.updateHistoryStatusController
     )
 
+    val notifyDependencies = initNotify(
+        dbConnection,
+        studentDependencies.studentRepository,
+        permitsTeacherDependencies.permitTeacherRepository
+    )
+
+    configureNotificationRoutes(
+        notifyDependencies.getNotificationsController,
+        notifyDependencies.markAsReadController
+    )
+
+    configureNotificationWebSocket(notifyDependencies.webSocketManager)
+
+    val permitionDependencies = initPermits(
+        dbConnection,
+        notifyDependencies.notificationService
+    )
+    
+    configurePermitRoutes(
+        permitionDependencies.createPermitController, 
+        permitionDependencies.getAllPermitsController, 
+        permitionDependencies.getPermitByIdController, 
+        permitionDependencies.updatePermitController, 
+        permitionDependencies.deletePermitController
+    )
+
     val port = environment.config.propertyOrNull("ktor.deployment.port")?.getString() ?: "8080"
     println("🚀 Servidor corriendo en puerto $port")
+    println("🔒 OAuth configurado:")
+    println("⚙️   - Google: ${dotenv["GOOGLE_REDIRECT_URL"]}")
+    println("⚙️   - GitHub: ${dotenv["GITHUB_REDIRECT_URL"]}")
+    println("🔔 WebSocket de notificaciones: ws://localhost:$port/ws/notifications/{userId}")
 }
