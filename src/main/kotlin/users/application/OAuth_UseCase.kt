@@ -3,6 +3,7 @@ package users.application
 import users.domain.IUserRepository
 import users.domain.entities.User
 import users.domain.dto.LoginResponse
+import users.domain.utils.EmailValidator 
 import core.security.AuthService
 import java.time.LocalDateTime
 
@@ -17,7 +18,15 @@ class OAuthUseCase(private val userRepo: IUserRepository) {
         middleName: String? = null
     ): LoginResponse {
         
-        println("🔍 Buscando usuario OAuth: provider=$oauthProvider, oauthId=$oauthId")
+        val roleInfo = EmailValidator.validateAndGetRole(email.trim())
+        
+        if (!roleInfo.isValid) {
+            throw IllegalArgumentException(
+                roleInfo.errorMessage ?: "Debes usar una cuenta institucional (@ids.upchiapas.edu.mx)"
+            )
+        }
+        
+        println("Buscando usuario OAuth: provider=$oauthProvider, oauthId=$oauthId")
         
         var user = userRepo.getByOAuthId(oauthProvider, oauthId)
         
@@ -29,7 +38,7 @@ class OAuthUseCase(private val userRepo: IUserRepository) {
             user = userRepo.getByEmail(email.trim())
             
             if (user != null) {
-                println("Usuario encontrado por email: ${user.email}")
+                println("⚠️ Usuario encontrado por email: ${user.email}")
                 println("El usuario ya existe con registro tradicional")
             } else {
                 println("Usuario no existe, creando nuevo...")
@@ -43,20 +52,26 @@ class OAuthUseCase(private val userRepo: IUserRepository) {
                     phone = null,
                     password = "", 
                     registrationDate = LocalDateTime.now(),
-                    roleId = 3, 
+                    roleId = roleInfo.roleId, 
                     oauthProvider = oauthProvider,
                     oauthId = oauthId
                 )
                 
                 user = userRepo.save(newUser)
-                println("Usuario OAuth creado: ${user.email} con ID: ${user.userId}")
+                println("Usuario OAuth creado: ${user.email} con ID: ${user.userId}, rol: ${roleInfo.roleId}")
+                
+                val savedUserId = user.userId
+                if (roleInfo.isTeacher && savedUserId != null) {
+                    userRepo.insertTeacher(savedUserId)
+                    println("Usuario ${user.email} también registrado como Teacher")
+                }
             }
         }
         
         val userId = user.userId ?: throw IllegalStateException("Usuario sin ID")
         
         val token = AuthService.generateJWT(userId, user.email)
-        println("Token JWT generado para: ${user.email}")
+        println("🔑 Token JWT generado para: ${user.email}")
         
         return LoginResponse(
             token = token,

@@ -10,4 +10,5 @@ interface IUserRepository {
     suspend fun getById(id: Int): User?
     suspend fun update(user: User): Unit
     suspend fun delete(id: Int): Unit
+    suspend fun insertTeacher(userId: Int)
 }

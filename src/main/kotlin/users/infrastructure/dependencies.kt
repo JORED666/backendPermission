@@ -24,7 +24,7 @@ fun initUsers(
     githubClientId: String,
     githubClientSecret: String,
     githubRedirectUrl: String,
-    frontendUrl: String = "http://localhost:5173"
+    frontendUrl: String = "http://localhost:4200"
 ): DependenciesUsers {
     
     val userRepository = MySQLUserRepository(conn)
@@ -38,7 +38,7 @@ fun initUsers(
     val deleteUserUseCase = DeleteUserUseCase(userRepository)
 
     return DependenciesUsers(
-        createUserController = CreateUserController(createUserUseCase, authService),
+        createUserController = CreateUserController(createUserUseCase, authService, userRepository),
         getAllUsersController = GetAllUsersController(getAllUsersUseCase),
         getByIdUserController = GetUserByIdController(getUserByIdUseCase),
         updateUserController = UpdateUserController(updateUserUseCase),
