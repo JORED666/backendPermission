@@ -19,7 +19,6 @@ COPY --from=build /app/build/libs/*.jar app.jar
 
 EXPOSE 8080
 
-ENV PORT=8080 \
-    JAVA_OPTS="-Xmx512m -Xms256m"
+ENV JAVA_OPTS="-Xmx512m -Xms256m"
 
-CMD java $JAVA_OPTS -Dserver.port=${PORT} -jar app.jar
+CMD java $JAVA_OPTS -Dktor.deployment.port=${PORT:-8080} -jar app.jar
