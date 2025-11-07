@@ -3,6 +3,7 @@ package students.infrastructure.adapters
 import core.ConnMySQL
 import students.domain.IStudentRepository
 import students.domain.entities.Student
+import java.sql.Connection  // ← AGREGAR ESTA IMPORTACIÓN
 
 class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
 
@@ -13,7 +14,7 @@ class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
         """
 
         return try {
-            conn.getConnection().use { connection ->
+            conn.getConnection().use { connection: Connection ->
                 connection.prepareStatement(query, java.sql.Statement.RETURN_GENERATED_KEYS).use { statement ->
                     statement.setString(1, student.enrollmentNumber)
                     statement.setString(2, student.familyTutorPhone)
@@ -49,7 +50,7 @@ class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
         """
 
         return try {
-            conn.getConnection().use { connection ->
+            conn.getConnection().use { connection: Connection ->
                 connection.prepareStatement(query).use { statement ->
                     statement.setInt(1, studentId)
                     statement.executeQuery().use { resultSet ->
@@ -80,7 +81,7 @@ class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
         """
 
         return try {
-            conn.getConnection().use { connection ->
+            conn.getConnection().use { connection: Connection ->
                 connection.prepareStatement(query).use { statement ->
                     statement.executeQuery().use { resultSet ->
                         val students = mutableListOf<Student>()
@@ -133,7 +134,7 @@ class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
         """
 
         return try {
-            conn.getConnection().use { connection ->
+            conn.getConnection().use { connection: Connection ->
                 connection.prepareStatement(query).use { statement ->
                     statement.executeQuery().use { resultSet ->
                         val students = mutableListOf<Map<String, Any?>>()
@@ -192,7 +193,7 @@ class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
         """
 
         return try {
-            conn.getConnection().use { connection ->
+            conn.getConnection().use { connection: Connection ->
                 connection.prepareStatement(query).use { statement ->
                     statement.setInt(1, studentId)
                     statement.executeQuery().use { resultSet ->
@@ -229,7 +230,7 @@ class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
         """
 
         return try {
-            conn.getConnection().use { connection ->
+            conn.getConnection().use { connection: Connection ->
                 connection.prepareStatement(query).use { statement ->
                     statement.setInt(1, userId)
                     statement.executeQuery().use { resultSet ->
@@ -260,7 +261,7 @@ class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
         """
 
         return try {
-            conn.getConnection().use { connection ->
+            conn.getConnection().use { connection: Connection ->
                 connection.prepareStatement(query).use { statement ->
                     statement.setString(1, enrollmentNumber)
                     statement.executeQuery().use { resultSet ->
@@ -322,7 +323,7 @@ class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
         """
 
         return try {
-            conn.getConnection().use { connection ->
+            conn.getConnection().use { connection: Connection ->
                 connection.prepareStatement(sql).use { statement ->
                     val searchPattern = "%$query%"
                     statement.setString(1, searchPattern)
@@ -363,7 +364,7 @@ class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
         """
 
         try {
-            conn.getConnection().use { connection ->
+            conn.getConnection().use { connection: Connection ->
                 connection.prepareStatement(query).use { statement ->
                     statement.setString(1, student.enrollmentNumber)
                     statement.setString(2, student.familyTutorPhone)
@@ -390,7 +391,7 @@ class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
         val query = "DELETE FROM students WHERE student_id = ?"
 
         try {
-            conn.getConnection().use { connection ->
+            conn.getConnection().use { connection: Connection ->
                 connection.prepareStatement(query).use { statement ->
                     statement.setInt(1, studentId)
                     val rowsAffected = statement.executeUpdate()
@@ -410,7 +411,7 @@ class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
         """
 
         return try {
-            conn.getConnection().use { connection ->
+            conn.getConnection().use { connection: Connection ->
                 connection.prepareStatement(query).use { statement ->
                     statement.setInt(1, studentId)
                     statement.executeQuery().use { resultSet ->
