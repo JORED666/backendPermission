@@ -25,7 +25,7 @@ fun initUsers(
     githubClientId: String,
     githubClientSecret: String,
     githubRedirectUrl: String,
-    frontendUrl: String = "http://localhost:4200"
+    frontendUrl: String = "https://frontend-permission.vercel.app/"
 ): DependenciesUsers {
     
     val userRepository = MySQLUserRepository(conn)
