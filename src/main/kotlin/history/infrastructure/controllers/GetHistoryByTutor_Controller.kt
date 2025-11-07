@@ -4,6 +4,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import history.application.GetHistoryByTutorUseCase
+import history.domain.dto.HistoryListByTutorResponse
 
 class GetHistoryByTutorController(
     private val getHistoryByTutorUseCase: GetHistoryByTutorUseCase
@@ -13,19 +14,22 @@ class GetHistoryByTutorController(
             val tutorId = call.parameters["tutorId"]?.toIntOrNull()
             
             if (tutorId == null) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("message" to "tutorId es requerido"))
+                call.respond(
+                    HttpStatusCode.BadRequest, 
+                    mapOf("message" to "tutorId es requerido")
+                )
                 return
             }
 
             val histories = getHistoryByTutorUseCase.execute(tutorId)
             
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf(
-                    "histories" to histories,
-                    "total" to histories.size
-                )
+            val response = HistoryListByTutorResponse(
+                histories = histories,
+                total = histories.size
             )
+            
+            call.respond(HttpStatusCode.OK, response)
+            
         } catch (error: Exception) {
             call.respond(
                 HttpStatusCode.InternalServerError,

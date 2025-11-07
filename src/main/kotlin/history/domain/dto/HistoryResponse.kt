@@ -128,3 +128,9 @@ data class MessageResponse(
 data class ErrorResponse(
     val error: String
 )
+
+@Serializable
+data class HistoryListByTutorResponse(
+    val histories: List<HistoryWithDetailsResponse>,
+    val total: Int
+)
