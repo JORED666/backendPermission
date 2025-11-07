@@ -9,6 +9,7 @@ fun Application.configureHistoryRoutes(
     getAllHistoryController: GetAllHistoryController,
     getHistoryByIdController: GetHistoryByIdController,
     getHistoryByStudentController: GetHistoryByStudentController,
+    getHistoryByTutorController: GetHistoryByTutorController,
     updateHistoryStatusController: UpdateHistoryStatusController
 ) {
     routing {
@@ -30,6 +31,10 @@ fun Application.configureHistoryRoutes(
                     getHistoryByStudentController.execute(call)
                 }
                 
+                get("/tutor/{tutorId}") {
+                    getHistoryByTutorController.execute(call)
+                }
+
                 patch("/{id}/status") {
                     updateHistoryStatusController.execute(call)
                 }

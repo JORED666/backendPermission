@@ -8,6 +8,7 @@ import notify.infrastructure.controllers.*
 import notify.infrastructure.websocket.WebSocketManager
 import students.domain.IStudentRepository
 import permitsTeacher.domain.IPermitTeacherRepository
+import tutors.domain.ITutorRepository  // ← AGREGAR
 
 data class DependenciesNotify(
     val getNotificationsController: GetNotificationsController,
@@ -19,7 +20,8 @@ data class DependenciesNotify(
 fun initNotify(
     conn: ConnMySQL,
     studentRepository: IStudentRepository,
-    permitTeacherRepository: IPermitTeacherRepository
+    permitTeacherRepository: IPermitTeacherRepository,
+    tutorRepository: ITutorRepository  
 ): DependenciesNotify {
     val notifyRepository: INotifyRepository = MySQLNotifyRepository(conn)
     val webSocketManager = WebSocketManager()
@@ -32,7 +34,8 @@ fun initNotify(
         createNotificationUseCase,
         webSocketManager,
         studentRepository,
-        permitTeacherRepository
+        permitTeacherRepository,
+        tutorRepository  
     )
 
     return DependenciesNotify(

@@ -1,6 +1,7 @@
 package tutors.infrastructure
 
 import core.ConnMySQL
+import tutors.domain.ITutorRepository  
 import tutors.infrastructure.adapters.MySQLTutorRepository
 import tutors.application.*
 import tutors.infrastructure.controller.*
@@ -10,7 +11,8 @@ data class DependenciesTutors(
     val getAllTutorsController: GetAllTutorsController,
     val getTutorByIdController: GetTutorByIdController,
     val updateTutorController: UpdateTutorController,
-    val deleteTutorController: DeleteTutorController
+    val deleteTutorController: DeleteTutorController,
+    val tutorRepository: ITutorRepository
 )
 
 fun initTutors(conn: ConnMySQL): DependenciesTutors {
@@ -27,6 +29,7 @@ fun initTutors(conn: ConnMySQL): DependenciesTutors {
         getAllTutorsController = GetAllTutorsController(getAllTutorsUseCase),
         getTutorByIdController = GetTutorByIdController(getTutorByIdUseCase),
         updateTutorController = UpdateTutorController(updateTutorUseCase),
-        deleteTutorController = DeleteTutorController(deleteTutorUseCase)
+        deleteTutorController = DeleteTutorController(deleteTutorUseCase),
+        tutorRepository = tutorRepository  
     )
 }

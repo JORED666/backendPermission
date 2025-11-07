@@ -2,6 +2,7 @@ package users.infrastructure
 
 import core.ConnMySQL
 import users.infrastructure.adapters.MySQLUserRepository
+import tutors.infrastructure.adapters.MySQLTutorRepository  
 import users.application.*
 import users.infrastructure.controller.*
 
@@ -28,8 +29,9 @@ fun initUsers(
 ): DependenciesUsers {
     
     val userRepository = MySQLUserRepository(conn)
+    val tutorRepository = MySQLTutorRepository(conn)  
     
-    val authService = AuthServiceUseCase(userRepository)
+    val authService = AuthServiceUseCase(userRepository, tutorRepository)  
     val oauthUseCase = OAuthUseCase(userRepository)
     val createUserUseCase = CreateUserUseCase(userRepository)
     val getAllUsersUseCase = GetAllUsersUseCase(userRepository)

@@ -6,7 +6,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import permition.application.UpdatePermitUseCase
-import permition.application.GetPermitByIdUseCase
+import permition.application.GetPermitByIdWithDetailsUseCase
 import permition.domain.entities.Permition
 import permition.domain.entities.PermitReason
 import permition.domain.entities.PermitStatus
@@ -17,7 +17,7 @@ import java.time.LocalDate
 
 class UpdatePermitController(
     private val updatePermit: UpdatePermitUseCase,
-    private val getPermitById: GetPermitByIdUseCase,
+    private val getPermitByIdWithDetails: GetPermitByIdWithDetailsUseCase,
     private val notificationService: NotificationService
 ) {
     suspend fun execute(call: ApplicationCall) {
@@ -29,24 +29,26 @@ class UpdatePermitController(
                 return
             }
             
-            val existingPermit = getPermitById.execute(id)
-            if (existingPermit == null) {
+            val permitWithDetails = getPermitByIdWithDetails.execute(id)
+            if (permitWithDetails == null) {
                 call.respond(HttpStatusCode.NotFound, ErrorResponse("Permiso no encontrado"))
                 return
             }
             
+            val existingTeacherIds = permitWithDetails.teachers.map { it.teacherId }
+            
             val multipart = call.receiveMultipart()
             
-            var studentId: Int? = null
-            var tutorId: Int? = null
-            var teacherIds: List<Int> = emptyList()
-            var startDate: String? = null
-            var endDate: String? = null
-            var reason: String? = null
-            var description: String? = null
-            var cuatrimestre: Int? = null 
-            var status: String? = null
-            var evidenceUrl: String? = existingPermit.evidence
+            var studentId: Int? = permitWithDetails.studentInfo.studentId
+            var tutorId: Int? = permitWithDetails.tutorInfo.tutorId
+            var teacherIds: List<Int> = existingTeacherIds
+            var startDate: String? = permitWithDetails.startDate.toString()
+            var endDate: String? = permitWithDetails.endDate.toString()
+            var reason: String? = permitWithDetails.reason.name
+            var description: String? = permitWithDetails.description
+            var cuatrimestre: Int? = permitWithDetails.cuatrimestre
+            var status: String? = permitWithDetails.status.name
+            var evidenceUrl: String? = permitWithDetails.evidence
             var validationError: String? = null
             var oldEvidenceUrl: String? = null
             
@@ -64,7 +66,7 @@ class UpdatePermitController(
                             "endDate" -> endDate = part.value
                             "reason" -> reason = part.value
                             "description" -> description = part.value
-                            "cuatrimestre" -> cuatrimestre = part.value.toIntOrNull()  
+                            "cuatrimestre" -> cuatrimestre = part.value.toIntOrNull()
                             "status" -> status = part.value
                         }
                     }
@@ -80,7 +82,7 @@ class UpdatePermitController(
                                 return@forEachPart
                             }
                             
-                            oldEvidenceUrl = existingPermit.evidence
+                            oldEvidenceUrl = permitWithDetails.evidence
                             
                             evidenceUrl = CloudinaryService.uploadFile(
                                 fileBytes = fileBytes,
@@ -99,12 +101,6 @@ class UpdatePermitController(
                 return
             }
             
-            if (studentId == null || tutorId == null || startDate == null || endDate == null || 
-                reason == null || description == null || cuatrimestre == null || status == null) { 
-                call.respond(HttpStatusCode.BadRequest, ErrorResponse("Faltan campos requeridos"))
-                return
-            }
-
             if (cuatrimestre!! !in 1..11) {
                 call.respond(HttpStatusCode.BadRequest, ErrorResponse("El cuatrimestre debe estar entre 1 y 11"))
                 return
@@ -122,16 +118,16 @@ class UpdatePermitController(
                 cuatrimestre = cuatrimestre!!, 
                 evidence = evidenceUrl,
                 status = PermitStatus.fromString(status!!),
-                requestDate = existingPermit.requestDate
+                requestDate = permitWithDetails.requestDate
             )
 
             updatePermit.execute(permit)
             
-            // Notificar según el cambio de estado
-            val oldStatus = existingPermit.status.toString()
-            if (oldStatus != status) {
+            val oldStatus = permitWithDetails.status.name
+            val newStatus = status!!
+            if (oldStatus != newStatus) {
                 try {
-                    if (status == "approved") {
+                    if (newStatus.equals("approved", ignoreCase = true)) {
                         notificationService.notifyStudentPermitStatus(
                             tutorId = permit.tutorId,
                             studentId = permit.studentId,
@@ -143,10 +139,10 @@ class UpdatePermitController(
                         notificationService.notifyTeachersPermitApproved(
                             studentId = permit.studentId,
                             permitId = id,
-                            studentName = "Estudiante"
+                            studentName = permitWithDetails.studentInfo.fullName
                         )
                         println("Notificaciones enviadas a los profesores")
-                    } else if (status == "rejected") {
+                    } else if (newStatus.equals("rejected", ignoreCase = true)) {
                         notificationService.notifyStudentPermitStatus(
                             tutorId = permit.tutorId,
                             studentId = permit.studentId,
@@ -177,7 +173,7 @@ class UpdatePermitController(
         } catch (error: Exception) {
             call.respond(
                 HttpStatusCode.InternalServerError,
-                ErrorResponse(error.message ?: "Error desconocido")
+                ErrorResponse(error.message ?: "Error desconocido: ${error.message}")
             )
         }
     }

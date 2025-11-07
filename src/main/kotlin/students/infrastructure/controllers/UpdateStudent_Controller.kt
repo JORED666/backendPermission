@@ -11,7 +11,7 @@ import students.domain.dto.*
 class UpdateStudentController(
     private val updateStudent: UpdateStudentUseCase
 ) {
-    
+     
     suspend fun execute(call: ApplicationCall) {
         try {
             val id = call.parameters["id"]?.toIntOrNull()

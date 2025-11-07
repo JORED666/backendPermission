@@ -13,13 +13,15 @@ import permition.domain.entities.PermitStatus
 import permition.domain.dto.*
 import core.cloudinary.CloudinaryService
 import notify.application.NotificationService
+import students.domain.IStudentRepository  
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class CreatePermitController(
     private val createPermit: CreatePermitUseCase,
     private val getPermitByIdWithDetails: GetPermitByIdWithDetailsUseCase,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val studentRepository: IStudentRepository 
 ) {
     
     suspend fun execute(call: ApplicationCall) {
@@ -27,7 +29,6 @@ class CreatePermitController(
             val multipart = call.receiveMultipart()
             
             var studentId: Int? = null
-            var tutorId: Int? = null
             var teacherIds: List<Int> = emptyList()
             var startDate: String? = null
             var endDate: String? = null
@@ -42,7 +43,6 @@ class CreatePermitController(
                     is PartData.FormItem -> {
                         when (part.name) {
                             "studentId" -> studentId = part.value.toIntOrNull()
-                            "tutorId" -> tutorId = part.value.toIntOrNull()
                             "teacherIds" -> {
                                 teacherIds = part.value.split(",")
                                     .mapNotNull { it.trim().toIntOrNull() }
@@ -83,7 +83,7 @@ class CreatePermitController(
                 return
             }
             
-            if (studentId == null || tutorId == null || startDate == null || endDate == null || 
+            if (studentId == null || startDate == null || endDate == null || 
                 reason == null || description == null || cuatrimestre == null) {
                 call.respond(HttpStatusCode.BadRequest, ErrorResponse("Faltan campos requeridos"))
                 return
@@ -94,9 +94,24 @@ class CreatePermitController(
                 return
             }
 
+            val student = studentRepository.getById(studentId!!)
+            if (student == null) {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("Estudiante no encontrado"))
+                return
+            }
+
+            val tutorId = student.tutorId
+            if (tutorId == null) {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("El estudiante no tiene tutor asignado"))
+                return
+            }
+
+            println("🎓 Estudiante ID: $studentId")
+            println("👨‍🏫 Tutor asignado (de BD): $tutorId")
+
             val permit = Permition(
                 studentId = studentId!!,
-                tutorId = tutorId!!,
+                tutorId = tutorId,  
                 teacherIds = teacherIds,
                 startDate = LocalDate.parse(startDate),
                 endDate = LocalDate.parse(endDate),
@@ -111,14 +126,19 @@ class CreatePermitController(
             val savedPermit = createPermit.execute(permit)
 
             try {
+                println("Información del permiso:")
+                println("  👨‍🎓 Estudiante ID: ${savedPermit.studentId}")
+                println("  📋 Permiso ID: ${savedPermit.permitId}")
+                
                 notificationService.notifyTutorNewPermit(
                     studentId = savedPermit.studentId,
                     permitId = savedPermit.permitId!!,
                     studentName = "Estudiante"
                 )
-                println("Notificacion enviada al tutor")
+                println("Notificación enviada exitosamente")
             } catch (e: Exception) {
-                println("Error enviando notificacion al tutor: ${e.message}")
+                println("Error enviando notificación al tutor: ${e.message}")
+                e.printStackTrace()
             }
 
             val permitWithDetails = getPermitByIdWithDetails.execute(savedPermit.permitId!!)

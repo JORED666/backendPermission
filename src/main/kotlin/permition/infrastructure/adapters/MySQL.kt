@@ -329,55 +329,95 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
             t.user_id as tutor_user_id,
             CONCAT(tu.first_name, ' ', COALESCE(tu.middle_name, ''), ' ', tu.last_name, ' ', COALESCE(tu.second_last_name, '')) as tutor_full_name,
             tu.email as tutor_email,
-            tu.phone as tutor_phone
+            tu.phone as tutor_phone,
+            te.teacher_id,
+            te.user_id as teacher_user_id,
+            CONCAT(teu.first_name, ' ', COALESCE(teu.middle_name, ''), ' ', teu.last_name, ' ', COALESCE(teu.second_last_name, '')) as teacher_full_name,
+            teu.email as teacher_email,
+            teu.phone as teacher_phone
         FROM permits p
         INNER JOIN students s ON p.student_id = s.student_id
         INNER JOIN users su ON s.user_id = su.user_id
         INNER JOIN tutors t ON p.tutor_id = t.tutor_id
         INNER JOIN users tu ON t.user_id = tu.user_id
-        ORDER BY p.request_date DESC
+        LEFT JOIN permits_teachers pt ON p.permit_id = pt.permit_id
+        LEFT JOIN teachers te ON pt.teacher_id = te.teacher_id
+        LEFT JOIN users teu ON te.user_id = teu.user_id
+        ORDER BY p.request_date DESC, p.permit_id, te.teacher_id
         """
 
         return try {
             conn.getConnection().use { connection ->
                 connection.prepareStatement(query).use { statement ->
                     statement.executeQuery().use { resultSet ->
-                        buildList {
-                            while (resultSet.next()) {
-                                val permitId = resultSet.getInt("permit_id")
-                                val teachers = getTeachersByPermitIdInternal(connection, permitId)
-
-                                add(
-                                    PermitWithDetails(
-                                        permitId = permitId,
-                                        studentInfo = StudentInfo(
-                                            studentId = resultSet.getInt("student_id"),
-                                            userId = resultSet.getInt("student_user_id"),
-                                            fullName = resultSet.getString("student_full_name").trim(),
-                                            email = resultSet.getString("student_email"),
-                                            phone = resultSet.getString("student_phone"),
-                                            enrollmentNumber = resultSet.getString("enrollment_number")
-                                        ),
-                                        tutorInfo = TutorInfo(
-                                            tutorId = resultSet.getInt("tutor_id"),
-                                            userId = resultSet.getInt("tutor_user_id"),
-                                            fullName = resultSet.getString("tutor_full_name").trim(),
-                                            email = resultSet.getString("tutor_email"),
-                                            phone = resultSet.getString("tutor_phone")
-                                        ),
-                                        teachers = teachers,
-                                        startDate = resultSet.getDate("start_date").toLocalDate(),
-                                        endDate = resultSet.getDate("end_date").toLocalDate(),
-                                        reason = PermitReason.fromString(resultSet.getString("reason")),
-                                        description = resultSet.getString("description"),
-                                        cuatrimestre = resultSet.getInt("cuatrimestre"),
-                                        evidence = resultSet.getString("evidence"),
-                                        status = PermitStatus.fromString(resultSet.getString("status")),
-                                        requestDate = resultSet.getTimestamp("request_date").toLocalDateTime()
+                        val permitsMap = mutableMapOf<Int, PermitWithDetails>()
+                        
+                        while (resultSet.next()) {
+                            val permitId = resultSet.getInt("permit_id")
+                            
+                            // Si el permiso ya existe en el map, solo agregamos el teacher
+                            if (permitsMap.containsKey(permitId)) {
+                                val teacherId = resultSet.getInt("teacher_id")
+                                if (!resultSet.wasNull() && teacherId > 0) {
+                                    val teacher = TeacherInfo(
+                                        teacherId = teacherId,
+                                        userId = resultSet.getInt("teacher_user_id"),
+                                        fullName = resultSet.getString("teacher_full_name").trim(),
+                                        email = resultSet.getString("teacher_email"),
+                                        phone = resultSet.getString("teacher_phone")
                                     )
+                                    val existingPermit = permitsMap[permitId]!!
+                                    permitsMap[permitId] = existingPermit.copy(
+                                        teachers = existingPermit.teachers + teacher
+                                    )
+                                }
+                            } else {
+                                // Primera vez que vemos este permiso, lo creamos
+                                val teachers = mutableListOf<TeacherInfo>()
+                                val teacherId = resultSet.getInt("teacher_id")
+                                if (!resultSet.wasNull() && teacherId > 0) {
+                                    teachers.add(
+                                        TeacherInfo(
+                                            teacherId = teacherId,
+                                            userId = resultSet.getInt("teacher_user_id"),
+                                            fullName = resultSet.getString("teacher_full_name").trim(),
+                                            email = resultSet.getString("teacher_email"),
+                                            phone = resultSet.getString("teacher_phone")
+                                        )
+                                    )
+                                }
+                                
+                                permitsMap[permitId] = PermitWithDetails(
+                                    permitId = permitId,
+                                    studentInfo = StudentInfo(
+                                        studentId = resultSet.getInt("student_id"),
+                                        userId = resultSet.getInt("student_user_id"),
+                                        fullName = resultSet.getString("student_full_name").trim(),
+                                        email = resultSet.getString("student_email"),
+                                        phone = resultSet.getString("student_phone"),
+                                        enrollmentNumber = resultSet.getString("enrollment_number")
+                                    ),
+                                    tutorInfo = TutorInfo(
+                                        tutorId = resultSet.getInt("tutor_id"),
+                                        userId = resultSet.getInt("tutor_user_id"),
+                                        fullName = resultSet.getString("tutor_full_name").trim(),
+                                        email = resultSet.getString("tutor_email"),
+                                        phone = resultSet.getString("tutor_phone")
+                                    ),
+                                    teachers = teachers,
+                                    startDate = resultSet.getDate("start_date").toLocalDate(),
+                                    endDate = resultSet.getDate("end_date").toLocalDate(),
+                                    reason = PermitReason.fromString(resultSet.getString("reason")),
+                                    description = resultSet.getString("description"),
+                                    cuatrimestre = resultSet.getInt("cuatrimestre"),
+                                    evidence = resultSet.getString("evidence"),
+                                    status = PermitStatus.fromString(resultSet.getString("status")),
+                                    requestDate = resultSet.getTimestamp("request_date").toLocalDateTime()
                                 )
                             }
                         }
+                        
+                        permitsMap.values.toList()
                     }
                 }
             }
@@ -408,13 +448,22 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
             t.user_id as tutor_user_id,
             CONCAT(tu.first_name, ' ', COALESCE(tu.middle_name, ''), ' ', tu.last_name, ' ', COALESCE(tu.second_last_name, '')) as tutor_full_name,
             tu.email as tutor_email,
-            tu.phone as tutor_phone
+            tu.phone as tutor_phone,
+            te.teacher_id,
+            te.user_id as teacher_user_id,
+            CONCAT(teu.first_name, ' ', COALESCE(teu.middle_name, ''), ' ', teu.last_name, ' ', COALESCE(teu.second_last_name, '')) as teacher_full_name,
+            teu.email as teacher_email,
+            teu.phone as teacher_phone
         FROM permits p
         INNER JOIN students s ON p.student_id = s.student_id
         INNER JOIN users su ON s.user_id = su.user_id
         INNER JOIN tutors t ON p.tutor_id = t.tutor_id
         INNER JOIN users tu ON t.user_id = tu.user_id
+        LEFT JOIN permits_teachers pt ON p.permit_id = pt.permit_id
+        LEFT JOIN teachers te ON pt.teacher_id = te.teacher_id
+        LEFT JOIN users teu ON te.user_id = teu.user_id
         WHERE p.permit_id = ?
+        ORDER BY te.teacher_id
         """
 
         return try {
@@ -423,96 +472,60 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                     statement.setInt(1, permitId)
 
                     statement.executeQuery().use { resultSet ->
-                        if (!resultSet.next()) {
-                            null
-                        } else {
-                            val teachers = getTeachersByPermitIdInternal(connection, permitId)
-
-                            PermitWithDetails(
-                                permitId = resultSet.getInt("permit_id"),
-                                studentInfo = StudentInfo(
-                                    studentId = resultSet.getInt("student_id"),
-                                    userId = resultSet.getInt("student_user_id"),
-                                    fullName = resultSet.getString("student_full_name").trim(),
-                                    email = resultSet.getString("student_email"),
-                                    phone = resultSet.getString("student_phone"),
-                                    enrollmentNumber = resultSet.getString("enrollment_number")
-                                ),
-                                tutorInfo = TutorInfo(
-                                    tutorId = resultSet.getInt("tutor_id"),
-                                    userId = resultSet.getInt("tutor_user_id"),
-                                    fullName = resultSet.getString("tutor_full_name").trim(),
-                                    email = resultSet.getString("tutor_email"),
-                                    phone = resultSet.getString("tutor_phone")
-                                ),
-                                teachers = teachers,
-                                startDate = resultSet.getDate("start_date").toLocalDate(),
-                                endDate = resultSet.getDate("end_date").toLocalDate(),
-                                reason = PermitReason.fromString(resultSet.getString("reason")),
-                                description = resultSet.getString("description"),
-                                cuatrimestre = resultSet.getInt("cuatrimestre"),
-                                evidence = resultSet.getString("evidence"),
-                                status = PermitStatus.fromString(resultSet.getString("status")),
-                                requestDate = resultSet.getTimestamp("request_date").toLocalDateTime()
-                            )
+                        var permit: PermitWithDetails? = null
+                        val teachers = mutableListOf<TeacherInfo>()
+                        
+                        while (resultSet.next()) {
+                            if (permit == null) {
+                                permit = PermitWithDetails(
+                                    permitId = resultSet.getInt("permit_id"),
+                                    studentInfo = StudentInfo(
+                                        studentId = resultSet.getInt("student_id"),
+                                        userId = resultSet.getInt("student_user_id"),
+                                        fullName = resultSet.getString("student_full_name").trim(),
+                                        email = resultSet.getString("student_email"),
+                                        phone = resultSet.getString("student_phone"),
+                                        enrollmentNumber = resultSet.getString("enrollment_number")
+                                    ),
+                                    tutorInfo = TutorInfo(
+                                        tutorId = resultSet.getInt("tutor_id"),
+                                        userId = resultSet.getInt("tutor_user_id"),
+                                        fullName = resultSet.getString("tutor_full_name").trim(),
+                                        email = resultSet.getString("tutor_email"),
+                                        phone = resultSet.getString("tutor_phone")
+                                    ),
+                                    teachers = emptyList(), 
+                                    startDate = resultSet.getDate("start_date").toLocalDate(),
+                                    endDate = resultSet.getDate("end_date").toLocalDate(),
+                                    reason = PermitReason.fromString(resultSet.getString("reason")),
+                                    description = resultSet.getString("description"),
+                                    cuatrimestre = resultSet.getInt("cuatrimestre"),
+                                    evidence = resultSet.getString("evidence"),
+                                    status = PermitStatus.fromString(resultSet.getString("status")),
+                                    requestDate = resultSet.getTimestamp("request_date").toLocalDateTime()
+                                )
+                            }
+                            
+                            val teacherId = resultSet.getInt("teacher_id")
+                            if (!resultSet.wasNull() && teacherId > 0) {
+                                teachers.add(
+                                    TeacherInfo(
+                                        teacherId = teacherId,
+                                        userId = resultSet.getInt("teacher_user_id"),
+                                        fullName = resultSet.getString("teacher_full_name").trim(),
+                                        email = resultSet.getString("teacher_email"),
+                                        phone = resultSet.getString("teacher_phone")
+                                    )
+                                )
+                            }
                         }
+                        
+                        permit?.copy(teachers = teachers)
                     }
                 }
             }
         } catch (error: Exception) {
             throw Exception("Failed to get permit by id with details: ${error.message}")
-        }
-    }
-
-    private fun getTeachersByPermitIdInternal(
-        connection: java.sql.Connection,
-        permitId: Int
-    ): List<TeacherInfo> {
-        val query = """
-        SELECT 
-            te.teacher_id,
-            te.user_id,
-            CONCAT(u.first_name, ' ', COALESCE(u.middle_name, ''), ' ', u.last_name, ' ', COALESCE(u.second_last_name, '')) as teacher_full_name,
-            u.email,
-            u.phone
-        FROM permits_teachers pt
-        INNER JOIN teachers te ON pt.teacher_id = te.teacher_id
-        INNER JOIN users u ON te.user_id = u.user_id
-        WHERE pt.permit_id = ?
-        """
-
-        return try {
-            connection.prepareStatement(query).use { statement ->
-                statement.setInt(1, permitId)
-
-                statement.executeQuery().use { resultSet ->
-                    buildList {
-                        while (resultSet.next()) {
-                            add(
-                                TeacherInfo(
-                                    teacherId = resultSet.getInt("teacher_id"),
-                                    userId = resultSet.getInt("user_id"),
-                                    fullName = resultSet.getString("teacher_full_name").trim(),
-                                    email = resultSet.getString("email"),
-                                    phone = resultSet.getString("phone")
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-        } catch (error: Exception) {
-            throw Exception("Failed to get teachers for permit: ${error.message}")
-        }
-    }
-
-    private suspend fun getTeachersByPermitId(permitId: Int): List<TeacherInfo> {
-        return try {
-            conn.getConnection().use { connection ->
-                getTeachersByPermitIdInternal(connection, permitId)
-            }
-        } catch (error: Exception) {
-            throw Exception("Failed to get teachers for permit: ${error.message}")
         }
     }
 

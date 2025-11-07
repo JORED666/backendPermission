@@ -3,11 +3,15 @@ package users.application
 import users.domain.IUserRepository
 import users.domain.entities.User
 import users.domain.dto.LoginResponse  
+import tutors.domain.ITutorRepository  
 import core.security.HashService
 import core.security.AuthService 
 import java.time.LocalDateTime
 
-class AuthServiceUseCase(private val userRepo: IUserRepository) {
+class AuthServiceUseCase(
+    private val userRepo: IUserRepository,
+    private val tutorRepo: ITutorRepository
+) {
     
     suspend fun login(email: String, password: String): LoginResponse {
         val trimmedEmail = email.trim()
@@ -27,11 +31,17 @@ class AuthServiceUseCase(private val userRepo: IUserRepository) {
             throw IllegalArgumentException("Contraseña incorrecta")
         }
         
-        val token = AuthService.generateJWT(user.userId!!, user.email)
+        val tutor = tutorRepo.getByUserId(user.userId!!)
+        val tutorId = tutor?.tutorId
+        
+        println("Usuario ${user.userId} - TutorId: $tutorId")
+        
+        val token = AuthService.generateJWT(user.userId, user.email)
         
         return LoginResponse(
             token = token,
             userId = user.userId,
+            tutorId = tutorId,  
             name = user.firstName,
             email = user.email
         )

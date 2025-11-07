@@ -11,6 +11,7 @@ data class DependenciesHistory(
     val getAllHistoryController: GetAllHistoryController,
     val getHistoryByIdController: GetHistoryByIdController,
     val getHistoryByStudentController: GetHistoryByStudentController,
+    val getHistoryByTutorController: GetHistoryByTutorController,
     val updateHistoryStatusController: UpdateHistoryStatusController
 )
 
@@ -21,6 +22,7 @@ fun initHistory(conn: ConnMySQL): DependenciesHistory {
     val getAllHistoryUseCase = GetAllHistoryUseCase(historyRepository)
     val getHistoryByIdUseCase = GetHistoryByIdUseCase(historyRepository)
     val getHistoryByStudentUseCase = GetHistoryByStudentUseCase(historyRepository)
+    val getHistoryByTutorUseCase = GetHistoryByTutorUseCase(historyRepository)
     val updateHistoryStatusUseCase = UpdateHistoryStatusUseCase(historyRepository)
 
     return DependenciesHistory(
@@ -28,6 +30,7 @@ fun initHistory(conn: ConnMySQL): DependenciesHistory {
         getAllHistoryController = GetAllHistoryController(getAllHistoryUseCase),
         getHistoryByIdController = GetHistoryByIdController(getHistoryByIdUseCase),
         getHistoryByStudentController = GetHistoryByStudentController(getHistoryByStudentUseCase),
+        getHistoryByTutorController = GetHistoryByTutorController(getHistoryByTutorUseCase),
         updateHistoryStatusController = UpdateHistoryStatusController(updateHistoryStatusUseCase)
     )
 }

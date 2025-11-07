@@ -69,7 +69,7 @@ data class StudentWithDetailsResponse(
 @Serializable
 data class StudentResponse(
     val studentId: Int?,
-    val matricula: String,
+    val matricula: String?,
     val telefonoTutorFamiliar: String?,
     val userId: Int,
     val tutorId: Int?

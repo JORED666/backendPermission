@@ -129,13 +129,15 @@ fun Application.module() {
         historyDependencies.getAllHistoryController, 
         historyDependencies.getHistoryByIdController, 
         historyDependencies.getHistoryByStudentController, 
+        historyDependencies.getHistoryByTutorController,
         historyDependencies.updateHistoryStatusController
     )
 
     val notifyDependencies = initNotify(
         dbConnection,
         studentDependencies.studentRepository,
-        permitsTeacherDependencies.permitTeacherRepository
+        permitsTeacherDependencies.permitTeacherRepository,
+        tutorDependencies.tutorRepository
     )
 
     configureNotificationRoutes(
@@ -146,8 +148,9 @@ fun Application.module() {
     configureNotificationWebSocket(notifyDependencies.webSocketManager)
 
     val permitionDependencies = initPermits(
-        dbConnection,
-        notifyDependencies.notificationService
+        conn = dbConnection,
+        notificationService = notifyDependencies.notificationService,
+        studentRepository = studentDependencies.studentRepository  
     )
     
     configurePermitRoutes(

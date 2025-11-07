@@ -13,4 +13,5 @@ interface IStudentRepository {
     suspend fun search(query: String): List<Map<String, Any?>>
     suspend fun update(student: Student): Unit
     suspend fun delete(studentId: Int): Unit
+    suspend fun getTutorIdByStudentId(studentId: Int): Int?
 }

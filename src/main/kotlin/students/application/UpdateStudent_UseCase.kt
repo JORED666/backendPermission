@@ -14,7 +14,7 @@ class UpdateStudentUseCase(private val db: IStudentRepository) {
             throw IllegalArgumentException("El ID de usuario es inválido")
         }
         
-        if (student.enrollmentNumber.isBlank()) {
+        if (student.enrollmentNumber.isNullOrBlank()) {
             throw IllegalArgumentException("La matrícula es requerida")
         }
         

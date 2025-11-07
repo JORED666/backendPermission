@@ -55,10 +55,12 @@ class ConnMySQL {
 
     private fun testConnection() {
         try {
-            val connection = dataSource.connection
-            val statement = connection.prepareStatement("SELECT NOW()")
-            statement.executeQuery()
-            connection.close()
+            dataSource.connection.use { connection ->
+                connection.prepareStatement("SELECT NOW()").use { statement ->
+                    statement.executeQuery().use { 
+                    }
+                }
+            }
             println("Conexión a MySQL exitosa.")
         } catch (error: Exception) {
             println("Error al verificar la conexión a la base de datos: ${error.message}")
@@ -71,29 +73,29 @@ class ConnMySQL {
 
         for (i in 0 until maxRetries) {
             try {
-                val connection = dataSource.connection
-                val statement = connection.prepareStatement(text)
-                
-                params?.forEachIndexed { index, param ->
-                    statement.setObject(index + 1, param)
-                }
-                
-                val resultSet = statement.executeQuery()
-                val rows = mutableListOf<Map<String, Any?>>()
-                
-                val metadata = resultSet.metaData
-                val columnCount = metadata.columnCount
-                
-                while (resultSet.next()) {
-                    val row = mutableMapOf<String, Any?>()
-                    for (j in 1..columnCount) {
-                        row[metadata.getColumnName(j)] = resultSet.getObject(j)
+                return dataSource.connection.use { connection ->
+                    connection.prepareStatement(text).use { statement ->
+                        params?.forEachIndexed { index, param ->
+                            statement.setObject(index + 1, param)
+                        }
+                        
+                        statement.executeQuery().use { resultSet ->
+                            val rows = mutableListOf<Map<String, Any?>>()
+                            val metadata = resultSet.metaData
+                            val columnCount = metadata.columnCount
+                            
+                            while (resultSet.next()) {
+                                val row = mutableMapOf<String, Any?>()
+                                for (j in 1..columnCount) {
+                                    row[metadata.getColumnName(j)] = resultSet.getObject(j)
+                                }
+                                rows.add(row)
+                            }
+                            
+                            QueryResult(rows)
+                        }
                     }
-                    rows.add(row)
                 }
-                
-                connection.close()
-                return QueryResult(rows)
             } catch (error: Exception) {
                 lastError = error
                 println("Error en query (intento ${i + 1}/$maxRetries): ${error.message}")
