@@ -8,6 +8,7 @@ fun Application.configureStudentRoutes(
     createStudentController: CreateStudentController,
     getAllStudentController: GetAllStudentController,
     getStudentByIdController: GetStudentByIdController,
+    getStudentsByTutorIdController: GetStudentsByTutorIdController,
     searchStudentController: SearchStudentController,
     updateStudentController: UpdateStudentController,
     deleteStudentController: DeleteStudentController
@@ -21,6 +22,10 @@ fun Application.configureStudentRoutes(
                 
                 get {
                     getAllStudentController.execute(call)
+                }
+                
+                get("/tutor/{tutorId}") {
+                    getStudentsByTutorIdController.execute(call)
                 }
                 
                 get("/search") {

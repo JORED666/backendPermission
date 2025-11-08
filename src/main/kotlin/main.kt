@@ -109,7 +109,8 @@ fun Application.module() {
     configureStudentRoutes(
         studentDependencies.createStudentController, 
         studentDependencies.getAllStudentController, 
-        studentDependencies.getStudentByIdController, 
+        studentDependencies.getStudentByIdController,
+        studentDependencies.getStudentsByTutorIdController,
         studentDependencies.searchStudentController, 
         studentDependencies.updateStudentController, 
         studentDependencies.deleteStudentController

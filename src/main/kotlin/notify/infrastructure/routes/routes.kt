@@ -17,7 +17,7 @@ fun Application.configureNotificationRoutes(
                 }
                 
                 // Marcar una notificación como leída
-                patch("/{id}/read") {
+                put("/{id}/read") {
                     markAsReadController.executeOne(call)
                 }
                 

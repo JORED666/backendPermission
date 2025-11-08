@@ -29,6 +29,7 @@ data class SenderInfoResponse(
 @Serializable
 data class PermitInfoResponse(
     val permitId: Int,
+    val matricula: String,  
     val motivo: String,
     val estado: String
 )
@@ -65,6 +66,7 @@ data class NotificationWithDetailsResponse(
                 informacionPermiso = if (data["permit_id"] != null) {
                     PermitInfoResponse(
                         permitId = data["permit_id"] as Int,
+                        matricula = data["student_matricula"] as String,  
                         motivo = data["permit_reason"] as String,
                         estado = data["permit_status"] as String
                     )

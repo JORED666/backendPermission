@@ -3,7 +3,7 @@ package students.infrastructure.adapters
 import core.ConnMySQL
 import students.domain.IStudentRepository
 import students.domain.entities.Student
-import java.sql.Connection  // ← AGREGAR ESTA IMPORTACIÓN
+import java.sql.Connection
 
 class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
 
@@ -429,6 +429,67 @@ class MySQLStudentRepository(private val conn: ConnMySQL) : IStudentRepository {
         } catch (error: Exception) {
             println("Error obteniendo tutor para estudiante $studentId: ${error.message}")
             throw Exception("Failed to get tutor id by student id: ${error.message}")
+        }
+    }
+
+    override suspend fun getStudentsByTutorId(tutorId: Int): List<Map<String, Any?>> {
+        val query = """
+            SELECT 
+                s.student_id,
+                s.enrollment_number,
+                s.family_tutor_phone,
+                s.user_id,
+                s.tutor_id,
+                CONCAT(
+                    COALESCE(u.first_name, ''), 
+                    ' ', 
+                    COALESCE(u.middle_name, ''), 
+                    ' ', 
+                    COALESCE(u.last_name, ''), 
+                    ' ', 
+                    COALESCE(u.second_last_name, '')
+                ) AS full_name,
+                u.email,
+                u.phone,
+                r.role_name,
+                r.description AS role_description,
+                u.registration_date
+            FROM students s
+            INNER JOIN users u ON s.user_id = u.user_id
+            INNER JOIN roles r ON u.role_id = r.role_id
+            WHERE s.tutor_id = ?
+            ORDER BY s.student_id DESC
+        """
+
+        return try {
+            conn.getConnection().use { connection: Connection ->
+                connection.prepareStatement(query).use { statement ->
+                    statement.setInt(1, tutorId)
+                    statement.executeQuery().use { resultSet ->
+                        val students = mutableListOf<Map<String, Any?>>()
+                        while (resultSet.next()) {
+                            students.add(
+                                mapOf(
+                                    "student_id" to resultSet.getInt("student_id"),
+                                    "enrollment_number" to resultSet.getString("enrollment_number"),
+                                    "family_tutor_phone" to resultSet.getString("family_tutor_phone"),
+                                    "user_id" to resultSet.getInt("user_id"),
+                                    "tutor_id" to resultSet.getObject("tutor_id"),
+                                    "full_name" to (resultSet.getString("full_name") ?: ""),
+                                    "email" to (resultSet.getString("email") ?: ""),
+                                    "phone" to resultSet.getString("phone"),
+                                    "role_name" to (resultSet.getString("role_name") ?: ""),
+                                    "role_description" to resultSet.getString("role_description"),
+                                    "registration_date" to resultSet.getTimestamp("registration_date").toLocalDateTime()
+                                )
+                            )
+                        }
+                        students
+                    }
+                }
+            }
+        } catch (error: Exception) {
+            throw Exception("Failed to get students by tutor id: ${error.message}")
         }
     }
 }
