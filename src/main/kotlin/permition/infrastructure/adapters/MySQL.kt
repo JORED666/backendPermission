@@ -355,7 +355,6 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                         while (resultSet.next()) {
                             val permitId = resultSet.getInt("permit_id")
                             
-                            // Si el permiso ya existe en el map, solo agregamos el teacher
                             if (permitsMap.containsKey(permitId)) {
                                 val teacherId = resultSet.getInt("teacher_id")
                                 if (!resultSet.wasNull() && teacherId > 0) {
@@ -372,7 +371,6 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                                     )
                                 }
                             } else {
-                                // Primera vez que vemos este permiso, lo creamos
                                 val teachers = mutableListOf<TeacherInfo>()
                                 val teacherId = resultSet.getInt("teacher_id")
                                 if (!resultSet.wasNull() && teacherId > 0) {

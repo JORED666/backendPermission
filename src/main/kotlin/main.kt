@@ -107,13 +107,14 @@ fun Application.module() {
 
     val studentDependencies = initStudents(dbConnection)
     configureStudentRoutes(
-        studentDependencies.createStudentController, 
-        studentDependencies.getAllStudentController, 
-        studentDependencies.getStudentByIdController,
-        studentDependencies.getStudentsByTutorIdController,
-        studentDependencies.searchStudentController, 
-        studentDependencies.updateStudentController, 
-        studentDependencies.deleteStudentController
+        createStudentController = studentDependencies.createStudentController,
+        getAllStudentController = studentDependencies.getAllStudentController,
+        getStudentByIdController = studentDependencies.getStudentByIdController,
+        getStudentByUserIdController = studentDependencies.getStudentByUserIdController, // NUEVO
+        getStudentsByTutorIdController = studentDependencies.getStudentsByTutorIdController,
+        searchStudentController = studentDependencies.searchStudentController,
+        updateStudentController = studentDependencies.updateStudentController,
+        deleteStudentController = studentDependencies.deleteStudentController
     )
 
     val permitsTeacherDependencies = initPermitTeacher(dbConnection)
@@ -138,7 +139,8 @@ fun Application.module() {
         dbConnection,
         studentDependencies.studentRepository,
         permitsTeacherDependencies.permitTeacherRepository,
-        tutorDependencies.tutorRepository
+        tutorDependencies.tutorRepository,
+        teacherDependencies.teacherRepository
     )
 
     configureNotificationRoutes(

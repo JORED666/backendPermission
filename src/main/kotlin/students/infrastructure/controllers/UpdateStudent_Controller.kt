@@ -23,36 +23,52 @@ class UpdateStudentController(
 
             val body = call.receive<UpdateStudentRequest>()
 
-            if (body.userId <= 0) {
+            val existingStudent = updateStudent.getExistingStudent(id)
+            if (existingStudent == null) {
+                call.respond(HttpStatusCode.NotFound, ErrorResponse("Estudiante no encontrado"))
+                return
+            }
+
+            if (body.userId != null && body.userId <= 0) {
                 call.respond(HttpStatusCode.BadRequest, ErrorResponse("El ID de usuario es inválido"))
                 return
             }
 
-            if (body.matricula.isBlank()) {
-                call.respond(HttpStatusCode.BadRequest, ErrorResponse("La matrícula es requerida"))
+            if (body.matricula != null && body.matricula.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("La matrícula no puede estar vacía"))
                 return
+            }
+
+            if (body.telefonoTutorFamiliar != null && body.telefonoTutorFamiliar.isNotBlank()) {
+                if (body.telefonoTutorFamiliar.length != 10 || !body.telefonoTutorFamiliar.all { it.isDigit() }) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("El teléfono debe tener exactamente 10 dígitos"))
+                    return
+                }
             }
 
             val student = Student(
                 studentId = id,
-                userId = body.userId,
-                enrollmentNumber = body.matricula,
-                familyTutorPhone = body.telefonoTutorFamiliar,
-                tutorId = body.tutorId
+                userId = body.userId ?: existingStudent.userId,
+                enrollmentNumber = body.matricula ?: existingStudent.enrollmentNumber,
+                familyTutorPhone = body.telefonoTutorFamiliar ?: existingStudent.familyTutorPhone,
+                tutorId = body.tutorId ?: existingStudent.tutorId
             )
 
             updateStudent.execute(student)
 
             call.respond(HttpStatusCode.OK, MessageResponse("Estudiante actualizado exitosamente"))
+            
         } catch (error: IllegalArgumentException) {
             call.respond(
                 HttpStatusCode.BadRequest,
                 ErrorResponse(error.message ?: "Error de validación")
             )
         } catch (error: Exception) {
+            println("❌ Error en UpdateStudentController: ${error.message}")
+            error.printStackTrace()
             call.respond(
                 HttpStatusCode.InternalServerError,
-                ErrorResponse(error.message ?: "Error desconocido")
+                ErrorResponse("Error interno del servidor")
             )
         }
     }

@@ -11,7 +11,8 @@ data class DependenciesTeachers(
     val getAllTeacherController: GetAllTeacherController,
     val getTeacherByIdController: GetTeacherByIdController,
     val updateTeacherController: UpdateTeacherController,
-    val deleteTeacherController: DeleteTeacherController
+    val deleteTeacherController: DeleteTeacherController,
+    val teacherRepository: ITeacherRepository
 )
 
 fun initTeachers(conn: ConnMySQL): DependenciesTeachers {
@@ -28,6 +29,7 @@ fun initTeachers(conn: ConnMySQL): DependenciesTeachers {
         getAllTeacherController = GetAllTeacherController(getAllTeachersWithDetailsUseCase),
         getTeacherByIdController = GetTeacherByIdController(getTeacherByIdWithDetailsUseCase),
         updateTeacherController = UpdateTeacherController(updateTeacherUseCase),
-        deleteTeacherController = DeleteTeacherController(deleteTeacherUseCase)
+        deleteTeacherController = DeleteTeacherController(deleteTeacherUseCase),
+        teacherRepository = teacherRepository
     )
 }

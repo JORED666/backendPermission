@@ -42,12 +42,25 @@ class CreateUserController(
                 return
             }
 
-            val roleInfo = EmailValidator.validateAndGetRole(body.email)
+            val finalRoleId: Int
+            val shouldCreateTeacher: Boolean
             
-            if (!roleInfo.isValid) {
-                call.respond(HttpStatusCode.BadRequest, 
-                    ErrorResponse(roleInfo.errorMessage ?: "Correo inválido"))
-                return
+            if (body.roleId != null) {
+                finalRoleId = body.roleId
+                shouldCreateTeacher = (body.roleId == 2)
+                println("Modo explícito: roleId=${body.roleId}, createTeacher=$shouldCreateTeacher")
+            } else {
+                val roleInfo = EmailValidator.validateAndGetRole(body.email)
+                
+                if (!roleInfo.isValid) {
+                    call.respond(HttpStatusCode.BadRequest, 
+                        ErrorResponse(roleInfo.errorMessage ?: "Correo inválido"))
+                    return
+                }
+                
+                finalRoleId = roleInfo.roleId
+                shouldCreateTeacher = roleInfo.isTeacher
+                println("Modo automático: roleId=${roleInfo.roleId}, createTeacher=${roleInfo.isTeacher}")
             }
 
             val user = User(
@@ -59,14 +72,16 @@ class CreateUserController(
                 phone = body.phone,
                 password = body.password,
                 registrationDate = LocalDateTime.now(),
-                roleId = roleInfo.roleId 
+                roleId = finalRoleId
             )
 
             val savedUser = authService.register(user)
             
-            if (roleInfo.isTeacher && savedUser.userId != null) {
+            if (shouldCreateTeacher && savedUser.userId != null) {
                 userRepo.insertTeacher(savedUser.userId)
-                println("Usuario ${savedUser.email} registrado como Tutor y Teacher")
+                println("Usuario ${savedUser.email} registrado como Teacher (roleId=$finalRoleId)")
+            } else {
+                println("Usuario ${savedUser.email} registrado sin tabla Teacher (roleId=$finalRoleId)")
             }
 
             call.respond(HttpStatusCode.Created, CreateUserResponse(

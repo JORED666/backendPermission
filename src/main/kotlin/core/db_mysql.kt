@@ -35,21 +35,39 @@ class ConnMySQL {
             password = dbPassword
             driverClassName = "com.mysql.cj.jdbc.Driver"
             
-            maximumPoolSize = 10
-            minimumIdle = 5
-            connectionTimeout = 10000
-            idleTimeout = 600000
-            maxLifetime = 1800000
-            keepaliveTime = 30000
+            maximumPoolSize = 30              
+            minimumIdle = 10                 
+            connectionTimeout = 30000         
+            idleTimeout = 600000              
+            maxLifetime = 1800000             
+            keepaliveTime = 30000             
+            
+            leakDetectionThreshold = 60000   
             
             addDataSourceProperty("cachePrepStmts", "true")
             addDataSourceProperty("prepStmtCacheSize", "250")
             addDataSourceProperty("prepStmtCacheSqlLimit", "2048")
+            addDataSourceProperty("useServerPrepStmts", "true")           
+            addDataSourceProperty("rewriteBatchedStatements", "true")    
+            addDataSourceProperty("cacheResultSetMetadata", "true")      
+            addDataSourceProperty("cacheServerConfiguration", "true")   
+            addDataSourceProperty("maintainTimeStats", "false")          
+            
+            addDataSourceProperty("connectTimeout", "30000")             
+            addDataSourceProperty("socketTimeout", "30000")              
+            
+            poolName = "PermitsHikariPool"                               
         }
 
         dataSource = HikariDataSource(config)
         
-        println("Pool de conexiones creado")
+        println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        println("✅ HikariCP Pool inicializado:")
+        println("   📊 Conexiones máximas: ${config.maximumPoolSize}")
+        println("   📊 Conexiones mínimas idle: ${config.minimumIdle}")
+        println("   ⏱️  Timeout de conexión: ${config.connectionTimeout}ms")
+        println("   🔍 Detección de leaks: ${config.leakDetectionThreshold}ms")
+        println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         testConnection()
     }
 
@@ -61,9 +79,9 @@ class ConnMySQL {
                     }
                 }
             }
-            println("Conexión a MySQL exitosa.")
+            println("✅ Conexión a MySQL exitosa.")
         } catch (error: Exception) {
-            println("Error al verificar la conexión a la base de datos: ${error.message}")
+            println("❌ Error al verificar la conexión a la base de datos: ${error.message}")
         }
     }
 
@@ -98,10 +116,11 @@ class ConnMySQL {
                 }
             } catch (error: Exception) {
                 lastError = error
-                println("Error en query (intento ${i + 1}/$maxRetries): ${error.message}")
+                println("⚠️ Error en query (intento ${i + 1}/$maxRetries): ${error.message}")
                 
                 if (error.message?.contains("ECONNRESET") == true || 
-                    error.message?.contains("PROTOCOL_CONNECTION_LOST") == true) {
+                    error.message?.contains("PROTOCOL_CONNECTION_LOST") == true ||
+                    error.message?.contains("Connection is not available") == true) {  
                     if (i < maxRetries - 1) {
                         delay(1000L * (i + 1))
                         continue
@@ -120,6 +139,22 @@ class ConnMySQL {
 
     fun close() {
         dataSource.close()
+        println("✅ Pool de conexiones cerrado")
+    }
+    
+    fun printPoolStats() {
+        try {
+            val pool = dataSource.hikariPoolMXBean
+            println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            println("📊 Estadísticas del Pool de Conexiones:")
+            println("   🟢 Conexiones activas: ${pool.activeConnections}")
+            println("   🔵 Conexiones idle: ${pool.idleConnections}")
+            println("   📈 Total de conexiones: ${pool.totalConnections}")
+            println("   ⏳ Threads esperando: ${pool.threadsAwaitingConnection}")
+            println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        } catch (e: Exception) {
+            println("❌ Error obteniendo estadísticas del pool: ${e.message}")
+        }
     }
 }
 

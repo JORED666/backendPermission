@@ -13,15 +13,15 @@ class MySQLPermitTeacherRepository(private val conn: ConnMySQL) : IPermitTeacher
         """
 
         try {
-            val connection = conn.getConnection()
-            val statement = connection.prepareStatement(query)
-            
-            statement.setInt(1, permitTeacher.permitId)
-            statement.setInt(2, permitTeacher.teacherId)
-            
-            statement.executeUpdate()
-            
-            return permitTeacher
+            conn.getConnection().use { connection ->
+                val statement = connection.prepareStatement(query)
+                statement.use { stmt ->
+                    stmt.setInt(1, permitTeacher.permitId)
+                    stmt.setInt(2, permitTeacher.teacherId)
+                    stmt.executeUpdate()
+                    return permitTeacher
+                }
+            }
         } catch (error: Exception) {
             throw Exception("Failed to save permit teacher: ${error.message}")
         }
@@ -35,21 +35,23 @@ class MySQLPermitTeacherRepository(private val conn: ConnMySQL) : IPermitTeacher
         """
 
         try {
-            val connection = conn.getConnection()
-            val statement = connection.prepareStatement(query)
-            statement.setInt(1, permitId)
-            statement.setInt(2, teacherId)
-            
-            val resultSet = statement.executeQuery()
+            conn.getConnection().use { connection ->
+                val statement = connection.prepareStatement(query)
+                statement.use { stmt ->
+                    stmt.setInt(1, permitId)
+                    stmt.setInt(2, teacherId)
+                    val resultSet = stmt.executeQuery()
 
-            if (!resultSet.next()) {
-                return null
+                    if (!resultSet.next()) {
+                        return null
+                    }
+
+                    return PermitTeacher(
+                        permitId = resultSet.getInt("permit_id"),
+                        teacherId = resultSet.getInt("teacher_id")
+                    )
+                }
             }
-
-            return PermitTeacher(
-                permitId = resultSet.getInt("permit_id"),
-                teacherId = resultSet.getInt("teacher_id")
-            )
         } catch (error: Exception) {
             throw Exception("Failed to get permit teacher: ${error.message}")
         }
@@ -63,20 +65,22 @@ class MySQLPermitTeacherRepository(private val conn: ConnMySQL) : IPermitTeacher
         """
 
         try {
-            val connection = conn.getConnection()
-            val statement = connection.prepareStatement(query)
-            val resultSet = statement.executeQuery()
-            
-            val permitsTeachers = mutableListOf<PermitTeacher>()
-            
-            while (resultSet.next()) {
-                permitsTeachers.add(PermitTeacher(
-                    permitId = resultSet.getInt("permit_id"),
-                    teacherId = resultSet.getInt("teacher_id")
-                ))
+            conn.getConnection().use { connection ->
+                val statement = connection.prepareStatement(query)
+                statement.use { stmt ->
+                    val resultSet = stmt.executeQuery()
+                    val permitsTeachers = mutableListOf<PermitTeacher>()
+                    
+                    while (resultSet.next()) {
+                        permitsTeachers.add(PermitTeacher(
+                            permitId = resultSet.getInt("permit_id"),
+                            teacherId = resultSet.getInt("teacher_id")
+                        ))
+                    }
+                    
+                    return permitsTeachers
+                }
             }
-            
-            return permitsTeachers
         } catch (error: Exception) {
             throw Exception("Failed to get all permits teachers: ${error.message}")
         }
@@ -106,29 +110,31 @@ class MySQLPermitTeacherRepository(private val conn: ConnMySQL) : IPermitTeacher
         """
 
         try {
-            val connection = conn.getConnection()
-            val statement = connection.prepareStatement(query)
-            val resultSet = statement.executeQuery()
-            
-            val permitsTeachers = mutableListOf<Map<String, Any?>>()
-            
-            while (resultSet.next()) {
-                permitsTeachers.add(mapOf(
-                    "permit_id" to resultSet.getInt("permit_id"),
-                    "teacher_id" to resultSet.getInt("teacher_id"),
-                    "start_date" to resultSet.getDate("start_date"),
-                    "end_date" to resultSet.getDate("end_date"),
-                    "reason" to resultSet.getString("reason"),
-                    "status" to resultSet.getString("status"),
-                    "cuatrimestre" to resultSet.getInt("cuatrimestre"),
-                    "student_name" to resultSet.getString("student_name"),
-                    "enrollment_number" to resultSet.getString("enrollment_number"),
-                    "teacher_name" to resultSet.getString("teacher_name"),
-                    "teacher_email" to resultSet.getString("teacher_email")
-                ))
+            conn.getConnection().use { connection ->
+                val statement = connection.prepareStatement(query)
+                statement.use { stmt ->
+                    val resultSet = stmt.executeQuery()
+                    val permitsTeachers = mutableListOf<Map<String, Any?>>()
+                    
+                    while (resultSet.next()) {
+                        permitsTeachers.add(mapOf(
+                            "permit_id" to resultSet.getInt("permit_id"),
+                            "teacher_id" to resultSet.getInt("teacher_id"),
+                            "start_date" to resultSet.getDate("start_date"),
+                            "end_date" to resultSet.getDate("end_date"),
+                            "reason" to resultSet.getString("reason"),
+                            "status" to resultSet.getString("status"),
+                            "cuatrimestre" to resultSet.getInt("cuatrimestre"),
+                            "student_name" to resultSet.getString("student_name"),
+                            "enrollment_number" to resultSet.getString("enrollment_number"),
+                            "teacher_name" to resultSet.getString("teacher_name"),
+                            "teacher_email" to resultSet.getString("teacher_email")
+                        ))
+                    }
+                    
+                    return permitsTeachers
+                }
             }
-            
-            return permitsTeachers
         } catch (error: Exception) {
             throw Exception("Failed to get all permits teachers with details: ${error.message}")
         }
@@ -143,22 +149,23 @@ class MySQLPermitTeacherRepository(private val conn: ConnMySQL) : IPermitTeacher
         """
 
         try {
-            val connection = conn.getConnection()
-            val statement = connection.prepareStatement(query)
-            statement.setInt(1, permitId)
-            
-            val resultSet = statement.executeQuery()
-            
-            val permitsTeachers = mutableListOf<PermitTeacher>()
-            
-            while (resultSet.next()) {
-                permitsTeachers.add(PermitTeacher(
-                    permitId = resultSet.getInt("permit_id"),
-                    teacherId = resultSet.getInt("teacher_id")
-                ))
+            conn.getConnection().use { connection ->
+                val statement = connection.prepareStatement(query)
+                statement.use { stmt ->
+                    stmt.setInt(1, permitId)
+                    val resultSet = stmt.executeQuery()
+                    val permitsTeachers = mutableListOf<PermitTeacher>()
+                    
+                    while (resultSet.next()) {
+                        permitsTeachers.add(PermitTeacher(
+                            permitId = resultSet.getInt("permit_id"),
+                            teacherId = resultSet.getInt("teacher_id")
+                        ))
+                    }
+                    
+                    return permitsTeachers
+                }
             }
-            
-            return permitsTeachers
         } catch (error: Exception) {
             throw Exception("Failed to get permits teachers by permit id: ${error.message}")
         }
@@ -173,22 +180,23 @@ class MySQLPermitTeacherRepository(private val conn: ConnMySQL) : IPermitTeacher
         """
 
         try {
-            val connection = conn.getConnection()
-            val statement = connection.prepareStatement(query)
-            statement.setInt(1, teacherId)
-            
-            val resultSet = statement.executeQuery()
-            
-            val permitsTeachers = mutableListOf<PermitTeacher>()
-            
-            while (resultSet.next()) {
-                permitsTeachers.add(PermitTeacher(
-                    permitId = resultSet.getInt("permit_id"),
-                    teacherId = resultSet.getInt("teacher_id")
-                ))
+            conn.getConnection().use { connection ->
+                val statement = connection.prepareStatement(query)
+                statement.use { stmt ->
+                    stmt.setInt(1, teacherId)
+                    val resultSet = stmt.executeQuery()
+                    val permitsTeachers = mutableListOf<PermitTeacher>()
+                    
+                    while (resultSet.next()) {
+                        permitsTeachers.add(PermitTeacher(
+                            permitId = resultSet.getInt("permit_id"),
+                            teacherId = resultSet.getInt("teacher_id")
+                        ))
+                    }
+                    
+                    return permitsTeachers
+                }
             }
-            
-            return permitsTeachers
         } catch (error: Exception) {
             throw Exception("Failed to get permits teachers by teacher id: ${error.message}")
         }
@@ -219,31 +227,32 @@ class MySQLPermitTeacherRepository(private val conn: ConnMySQL) : IPermitTeacher
         """
 
         try {
-            val connection = conn.getConnection()
-            val statement = connection.prepareStatement(query)
-            statement.setInt(1, permitId)
-            
-            val resultSet = statement.executeQuery()
-            
-            val permitsTeachers = mutableListOf<Map<String, Any?>>()
-            
-            while (resultSet.next()) {
-                permitsTeachers.add(mapOf(
-                    "permit_id" to resultSet.getInt("permit_id"),
-                    "teacher_id" to resultSet.getInt("teacher_id"),
-                    "start_date" to resultSet.getDate("start_date"),
-                    "end_date" to resultSet.getDate("end_date"),
-                    "reason" to resultSet.getString("reason"),
-                    "status" to resultSet.getString("status"),
-                    "cuatrimestre" to resultSet.getInt("cuatrimestre"),
-                    "student_name" to resultSet.getString("student_name"),
-                    "enrollment_number" to resultSet.getString("enrollment_number"),
-                    "teacher_name" to resultSet.getString("teacher_name"),
-                    "teacher_email" to resultSet.getString("teacher_email")
-                ))
+            conn.getConnection().use { connection ->
+                val statement = connection.prepareStatement(query)
+                statement.use { stmt ->
+                    stmt.setInt(1, permitId)
+                    val resultSet = stmt.executeQuery()
+                    val permitsTeachers = mutableListOf<Map<String, Any?>>()
+                    
+                    while (resultSet.next()) {
+                        permitsTeachers.add(mapOf(
+                            "permit_id" to resultSet.getInt("permit_id"),
+                            "teacher_id" to resultSet.getInt("teacher_id"),
+                            "start_date" to resultSet.getDate("start_date"),
+                            "end_date" to resultSet.getDate("end_date"),
+                            "reason" to resultSet.getString("reason"),
+                            "status" to resultSet.getString("status"),
+                            "cuatrimestre" to resultSet.getInt("cuatrimestre"),
+                            "student_name" to resultSet.getString("student_name"),
+                            "enrollment_number" to resultSet.getString("enrollment_number"),
+                            "teacher_name" to resultSet.getString("teacher_name"),
+                            "teacher_email" to resultSet.getString("teacher_email")
+                        ))
+                    }
+                    
+                    return permitsTeachers
+                }
             }
-            
-            return permitsTeachers
         } catch (error: Exception) {
             throw Exception("Failed to get permits teachers by permit id with details: ${error.message}")
         }
@@ -274,31 +283,32 @@ class MySQLPermitTeacherRepository(private val conn: ConnMySQL) : IPermitTeacher
         """
 
         try {
-            val connection = conn.getConnection()
-            val statement = connection.prepareStatement(query)
-            statement.setInt(1, teacherId)
-            
-            val resultSet = statement.executeQuery()
-            
-            val permitsTeachers = mutableListOf<Map<String, Any?>>()
-            
-            while (resultSet.next()) {
-                permitsTeachers.add(mapOf(
-                    "permit_id" to resultSet.getInt("permit_id"),
-                    "teacher_id" to resultSet.getInt("teacher_id"),
-                    "start_date" to resultSet.getDate("start_date"),
-                    "end_date" to resultSet.getDate("end_date"),
-                    "reason" to resultSet.getString("reason"),
-                    "status" to resultSet.getString("status"),
-                    "cuatrimestre" to resultSet.getInt("cuatrimestre"),
-                    "student_name" to resultSet.getString("student_name"),
-                    "enrollment_number" to resultSet.getString("enrollment_number"),
-                    "teacher_name" to resultSet.getString("teacher_name"),
-                    "teacher_email" to resultSet.getString("teacher_email")
-                ))
+            conn.getConnection().use { connection ->
+                val statement = connection.prepareStatement(query)
+                statement.use { stmt ->
+                    stmt.setInt(1, teacherId)
+                    val resultSet = stmt.executeQuery()
+                    val permitsTeachers = mutableListOf<Map<String, Any?>>()
+                    
+                    while (resultSet.next()) {
+                        permitsTeachers.add(mapOf(
+                            "permit_id" to resultSet.getInt("permit_id"),
+                            "teacher_id" to resultSet.getInt("teacher_id"),
+                            "start_date" to resultSet.getDate("start_date"),
+                            "end_date" to resultSet.getDate("end_date"),
+                            "reason" to resultSet.getString("reason"),
+                            "status" to resultSet.getString("status"),
+                            "cuatrimestre" to resultSet.getInt("cuatrimestre"),
+                            "student_name" to resultSet.getString("student_name"),
+                            "enrollment_number" to resultSet.getString("enrollment_number"),
+                            "teacher_name" to resultSet.getString("teacher_name"),
+                            "teacher_email" to resultSet.getString("teacher_email")
+                        ))
+                    }
+                    
+                    return permitsTeachers
+                }
             }
-            
-            return permitsTeachers
         } catch (error: Exception) {
             throw Exception("Failed to get permits teachers by teacher id with details: ${error.message}")
         }
@@ -308,15 +318,17 @@ class MySQLPermitTeacherRepository(private val conn: ConnMySQL) : IPermitTeacher
         val query = "DELETE FROM permits_teachers WHERE permit_id = ? AND teacher_id = ?"
 
         try {
-            val connection = conn.getConnection()
-            val statement = connection.prepareStatement(query)
-            statement.setInt(1, permitId)
-            statement.setInt(2, teacherId)
-            
-            val rowsAffected = statement.executeUpdate()
+            conn.getConnection().use { connection ->
+                val statement = connection.prepareStatement(query)
+                statement.use { stmt ->
+                    stmt.setInt(1, permitId)
+                    stmt.setInt(2, teacherId)
+                    val rowsAffected = stmt.executeUpdate()
 
-            if (rowsAffected == 0) {
-                throw Exception("Permit teacher not found")
+                    if (rowsAffected == 0) {
+                        throw Exception("Permit teacher not found")
+                    }
+                }
             }
         } catch (error: Exception) {
             throw Exception("Failed to delete permit teacher: ${error.message}")
@@ -327,25 +339,29 @@ class MySQLPermitTeacherRepository(private val conn: ConnMySQL) : IPermitTeacher
         val query = "DELETE FROM permits_teachers WHERE permit_id = ?"
 
         try {
-            val connection = conn.getConnection()
-            val statement = connection.prepareStatement(query)
-            statement.setInt(1, permitId)
-            
-            statement.executeUpdate()
+            conn.getConnection().use { connection ->
+                val statement = connection.prepareStatement(query)
+                statement.use { stmt ->
+                    stmt.setInt(1, permitId)
+                    stmt.executeUpdate()
+                }
+            }
         } catch (error: Exception) {
             throw Exception("Failed to delete permits teachers by permit id: ${error.message}")
         }
     }
 
     override suspend fun deleteByTeacherId(teacherId: Int) {
-        val query = "DELETE FROM permits_teachers WHERE teacher_id = ?"
+        val query = "DELETE FROM permits teachers WHERE teacher_id = ?"
 
         try {
-            val connection = conn.getConnection()
-            val statement = connection.prepareStatement(query)
-            statement.setInt(1, teacherId)
-            
-            statement.executeUpdate()
+            conn.getConnection().use { connection ->
+                val statement = connection.prepareStatement(query)
+                statement.use { stmt ->
+                    stmt.setInt(1, teacherId)
+                    stmt.executeUpdate()
+                }
+            }
         } catch (error: Exception) {
             throw Exception("Failed to delete permits teachers by teacher id: ${error.message}")
         }

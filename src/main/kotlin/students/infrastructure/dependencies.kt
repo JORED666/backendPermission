@@ -10,6 +10,7 @@ data class DependenciesStudents(
     val createStudentController: CreateStudentController,
     val getAllStudentController: GetAllStudentController,
     val getStudentByIdController: GetStudentByIdController,
+    val getStudentByUserIdController: GetStudentByUserIdController, // NUEVO
     val getStudentsByTutorIdController: GetStudentsByTutorIdController,
     val searchStudentController: SearchStudentController,
     val updateStudentController: UpdateStudentController,
@@ -23,6 +24,7 @@ fun initStudents(conn: ConnMySQL): DependenciesStudents {
     val createStudentUseCase = CreateStudentUseCase(studentRepository)
     val getAllStudentsWithDetailsUseCase = GetAllStudentsWithDetailsUseCase(studentRepository)
     val getStudentByIdWithDetailsUseCase = GetStudentByIdWithDetailsUseCase(studentRepository)
+    val getStudentByUserIdUseCase = GetStudentByUserIdUseCase(studentRepository) // NUEVO
     val getStudentsByTutorIdUseCase = GetStudentsByTutorIdUseCase(studentRepository)
     val searchStudentUseCase = SearchStudentUseCase(studentRepository)
     val updateStudentUseCase = UpdateStudentUseCase(studentRepository)
@@ -32,6 +34,7 @@ fun initStudents(conn: ConnMySQL): DependenciesStudents {
         createStudentController = CreateStudentController(createStudentUseCase),
         getAllStudentController = GetAllStudentController(getAllStudentsWithDetailsUseCase),
         getStudentByIdController = GetStudentByIdController(getStudentByIdWithDetailsUseCase),
+        getStudentByUserIdController = GetStudentByUserIdController(getStudentByUserIdUseCase), // NUEVO
         getStudentsByTutorIdController = GetStudentsByTutorIdController(getStudentsByTutorIdUseCase),
         searchStudentController = SearchStudentController(searchStudentUseCase),
         updateStudentController = UpdateStudentController(updateStudentUseCase),

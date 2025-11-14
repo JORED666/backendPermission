@@ -13,8 +13,8 @@ data class CreateStudentRequest(
 
 @Serializable
 data class UpdateStudentRequest(
-    val userId: Int,
-    val matricula: String,
+    val userId: Int? = null,
+    val matricula: String? = null,
     val telefonoTutorFamiliar: String? = null,
     val tutorId: Int? = null
 )

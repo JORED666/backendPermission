@@ -13,38 +13,79 @@ class WebSocketManager {
     private val connections = ConcurrentHashMap<Int, MutableSet<WebSocketSession>>()
     
     fun addConnection(userId: Int, session: WebSocketSession) {
-        connections.getOrPut(userId) { mutableSetOf() }.add(session)
-        println("User $userId connected. Total connections: ${connections[userId]?.size}")
+        connections.getOrPut(userId) { ConcurrentHashMap.newKeySet() }.add(session)
+        
+        val totalConnections = getTotalConnections()
+        val userSessions = connections[userId]?.size ?: 0
+        
+        println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        println("🔌 User $userId connected")
+        println("   👤 Sessions for this user: $userSessions")
+        println("   🌐 Total connections: $totalConnections")
+        println("   👥 Total users: ${getTotalUsers()}")
+        println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     }
     
     fun removeConnection(userId: Int, session: WebSocketSession) {
+        val sessionsBeforeRemoval = connections[userId]?.size ?: 0
         connections[userId]?.remove(session)
+        
         if (connections[userId]?.isEmpty() == true) {
             connections.remove(userId)
         }
-        println("User $userId disconnected. Remaining connections: ${connections[userId]?.size ?: 0}")
+        
+        val sessionsAfterRemoval = connections[userId]?.size ?: 0
+        val totalConnections = getTotalConnections()
+        
+        println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        println("🔌 User $userId disconnected")
+        println("   👤 Sessions: $sessionsBeforeRemoval -> $sessionsAfterRemoval")
+        println("   🌐 Total connections: $totalConnections")
+        println("   👥 Total users: ${getTotalUsers()}")
+        println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     }
     
     suspend fun sendNotificationToUser(userId: Int, notification: Notify) {
-        val sessions = connections[userId] ?: return
+        val sessions = connections[userId]
         
-        // Convertir Notify a NotificationResponse que SÍ es serializable
+        if (sessions == null || sessions.isEmpty()) {
+            println("⚠️ No active sessions for user $userId")
+            return
+        }
+        
         val notificationResponse = NotificationResponse.fromNotify(notification)
         val message = Json.encodeToString(notificationResponse)
+        
+        println("📡 Sending notification to user $userId (${sessions.size} sessions)")
+        
+        val sessionsToRemove = mutableSetOf<WebSocketSession>()
+        var successCount = 0
         
         sessions.forEach { session ->
             try {
                 session.send(Frame.Text(message))
-                println("Notification sent to user $userId")
+                successCount++
+                println("   ✅ Sent to session ${session.hashCode()}")
             } catch (e: Exception) {
-                println("Error sending notification to user $userId: ${e.message}")
-                removeConnection(userId, session)
+                println("   ❌ Failed to send to session ${session.hashCode()}: ${e.message}")
+                sessionsToRemove.add(session)
             }
         }
+        
+        sessionsToRemove.forEach { session ->
+            removeConnection(userId, session)
+        }
+        
+        println("📊 Notification delivery: $successCount/${sessions.size} successful")
     }
     
     suspend fun sendNotificationWithDetails(userId: Int, notificationDetails: NotificationWithDetailsResponse) {
-        val sessions = connections[userId] ?: return
+        val sessions = connections[userId]
+        
+        if (sessions == null || sessions.isEmpty()) {
+            println("⚠️ No active sessions for user $userId")
+            return
+        }
         
         val wsNotification = WebSocketNotification(
             type = "notification",
@@ -53,15 +94,27 @@ class WebSocketManager {
         
         val message = Json.encodeToString(wsNotification)
         
+        println("📡 Sending detailed notification to user $userId (${sessions.size} sessions)")
+        
+        val sessionsToRemove = mutableSetOf<WebSocketSession>()
+        var successCount = 0
+        
         sessions.forEach { session ->
             try {
                 session.send(Frame.Text(message))
-                println("Detailed notification sent to user $userId")
+                successCount++
+                println("   ✅ Sent to session ${session.hashCode()}")
             } catch (e: Exception) {
-                println("Error sending detailed notification to user $userId: ${e.message}")
-                removeConnection(userId, session)
+                println("   ❌ Failed to send to session ${session.hashCode()}: ${e.message}")
+                sessionsToRemove.add(session)
             }
         }
+        
+        sessionsToRemove.forEach { session ->
+            removeConnection(userId, session)
+        }
+        
+        println("📊 Notification delivery: $successCount/${sessions.size} successful")
     }
     
     fun getConnectedUsers(): Set<Int> {
@@ -70,5 +123,22 @@ class WebSocketManager {
     
     fun isUserConnected(userId: Int): Boolean {
         return connections.containsKey(userId) && connections[userId]?.isNotEmpty() == true
+    }
+    
+    private fun getTotalConnections(): Int {
+        return connections.values.sumOf { it.size }
+    }
+    
+    private fun getTotalUsers(): Int {
+        return connections.size
+    }
+    
+    fun getConnectionStats(): Map<String, Any> {
+        return mapOf(
+            "totalConnections" to getTotalConnections(),
+            "totalUsers" to getTotalUsers(),
+            "usersWithMultipleSessions" to connections.count { it.value.size > 1 },
+            "userConnections" to connections.mapValues { it.value.size }
+        )
     }
 }
