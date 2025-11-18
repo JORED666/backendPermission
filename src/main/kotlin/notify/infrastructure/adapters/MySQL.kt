@@ -3,6 +3,7 @@ package notify.infrastructure.adapters
 import core.ConnMySQL
 import notify.domain.INotifyRepository
 import notify.domain.entities.Notify
+import notify.domain.dto.NotificationWithDetailsResponse
 
 class MySQLNotifyRepository(private val conn: ConnMySQL) : INotifyRepository {
 
@@ -293,6 +294,82 @@ class MySQLNotifyRepository(private val conn: ConnMySQL) : INotifyRepository {
             }
         } catch (error: Exception) {
             throw Exception("Failed to get notifications with details: ${error.message}")
+        }
+    }
+
+    // Agregar este método al final de la clase MySQLNotifyRepository
+
+    override suspend fun getNotificationWithDetails(
+            notificationId: Int
+    ): NotificationWithDetailsResponse? {
+        val query =
+                """
+        SELECT 
+            n.notification_id,
+            n.sender_id,
+            n.receiver_id,
+            n.type,
+            n.message,
+            n.related_permit_id,
+            n.is_read,
+            n.created_at,
+            TRIM(CONCAT(
+                u.first_name, ' ', 
+                COALESCE(u.middle_name, ''), ' ', 
+                u.last_name, ' ', 
+                COALESCE(u.second_last_name, '')
+            )) AS sender_name,
+            u.email AS sender_email,
+            p.permit_id,
+            s.enrollment_number AS student_matricula,
+            p.reason AS permit_reason,
+            p.status AS permit_status
+        FROM notifications n
+        INNER JOIN users u ON n.sender_id = u.user_id
+        LEFT JOIN permits p ON n.related_permit_id = p.permit_id
+        LEFT JOIN students s ON p.student_id = s.student_id
+        WHERE n.notification_id = ?
+    """
+
+        try {
+            conn.getConnection().use { connection ->
+                connection.prepareStatement(query).use { statement ->
+                    statement.setInt(1, notificationId)
+
+                    statement.executeQuery().use { resultSet ->
+                        if (!resultSet.next()) {
+                            return null
+                        }
+
+                        val data =
+                                mapOf(
+                                        "notification_id" to resultSet.getInt("notification_id"),
+                                        "sender_id" to resultSet.getInt("sender_id"),
+                                        "receiver_id" to resultSet.getInt("receiver_id"),
+                                        "type" to resultSet.getString("type"),
+                                        "message" to resultSet.getString("message"),
+                                        "related_permit_id" to
+                                                resultSet.getObject("related_permit_id"),
+                                        "is_read" to resultSet.getBoolean("is_read"),
+                                        "created_at" to
+                                                resultSet
+                                                        .getTimestamp("created_at")
+                                                        ?.toLocalDateTime(),
+                                        "sender_name" to resultSet.getString("sender_name"),
+                                        "sender_email" to resultSet.getString("sender_email"),
+                                        "permit_id" to resultSet.getObject("permit_id"),
+                                        "student_matricula" to
+                                                resultSet.getString("student_matricula"),
+                                        "permit_reason" to resultSet.getString("permit_reason"),
+                                        "permit_status" to resultSet.getString("permit_status")
+                                )
+
+                        return NotificationWithDetailsResponse.fromMap(data)
+                    }
+                }
+            }
+        } catch (error: Exception) {
+            throw Exception("Failed to get notification with details: ${error.message}")
         }
     }
 }

@@ -4,10 +4,16 @@ import users.domain.IUserRepository
 import users.domain.entities.User
 import users.domain.dto.LoginResponse
 import users.domain.utils.EmailValidator 
+import tutors.domain.ITutorRepository
+import students.domain.IStudentRepository
 import core.security.AuthService
 import java.time.LocalDateTime
 
-class OAuthUseCase(private val userRepo: IUserRepository) {
+class OAuthUseCase(
+    private val userRepo: IUserRepository,
+    private val tutorRepo: ITutorRepository,
+    private val studentRepo: IStudentRepository
+) {
     
     suspend fun loginOrRegisterWithOAuth(
         email: String,
@@ -70,12 +76,23 @@ class OAuthUseCase(private val userRepo: IUserRepository) {
         
         val userId = user.userId ?: throw IllegalStateException("Usuario sin ID")
         
+        val tutor = tutorRepo.getByUserId(userId)
+        val tutorId = tutor?.tutorId
+        
+        val student = studentRepo.getByUserId(userId)
+        val studentId = student?.studentId
+        
+        println("Usuario $userId - RoleId: ${user.roleId} - TutorId: $tutorId - StudentId: $studentId")
+        
         val token = AuthService.generateJWT(userId, user.email)
         println("🔑 Token JWT generado para: ${user.email}")
         
         return LoginResponse(
             token = token,
-            userId = userId, 
+            userId = userId,
+            tutorId = tutorId,
+            studentId = studentId,
+            roleId = user.roleId,
             name = user.firstName,
             email = user.email
         )

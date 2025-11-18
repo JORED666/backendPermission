@@ -9,7 +9,9 @@ fun Application.configurePermitRoutes(
     getAllPermitsController: GetAllPermitsController,
     getPermitByIdController: GetPermitByIdController,
     updatePermitController: UpdatePermitController,
-    deletePermitController: DeletePermitController
+    deletePermitController: DeletePermitController,
+    updatePermitDocumentUrlController: UpdatePermitDocumentUrlController,
+    generatePermitPDFController: GeneratePermitPDFController  // 🎯 NUEVO
 ) {
     routing {
         route("/api") {
@@ -32,6 +34,16 @@ fun Application.configurePermitRoutes(
                 // Actualizar permiso
                 put("/{id}") {
                     updatePermitController.execute(call)
+                }
+                
+                // Actualizar URL del documento del permiso
+                put("/{id}/document-url") {
+                    updatePermitDocumentUrlController.execute(call)
+                }
+                
+                // Generar PDF automáticamente
+                post("/{id}/generate-document") {
+                    generatePermitPDFController.execute(call)
                 }
                 
                 // Eliminar permiso

@@ -72,6 +72,8 @@ data class ErrorResponse(
 data class LoginResponse(
     val token: String,
     val userId: Int,
+    val studentId: Int? = null,
+    val roleId: Int,
     val tutorId: Int? = null,
     val name: String,
     val email: String

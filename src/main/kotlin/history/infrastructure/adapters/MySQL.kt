@@ -148,6 +148,7 @@ class MySQLHistoryRepository(private val conn: ConnMySQL) : IHistoryRepository {
                 ph.request_date,
                 p.description AS permit_description,
                 p.evidence AS permit_evidence,
+                p.permit_document_url AS permit_document_url,
                 p.cuatrimestre AS permit_cuatrimestre,
                 s.enrollment_number,
                 CONCAT(u.first_name, ' ', COALESCE(u.middle_name, ''), ' ', u.last_name, ' ', COALESCE(u.second_last_name, '')) AS student_name,
@@ -184,6 +185,8 @@ class MySQLHistoryRepository(private val conn: ConnMySQL) : IHistoryRepository {
                                                     resultSet.getString("permit_description"),
                                             "permit_evidence" to
                                                     resultSet.getString("permit_evidence"),
+                                            "permit_document_url" to
+                                                    resultSet.getString("permit_document_url"),
                                             "permit_cuatrimestre" to
                                                     resultSet.getInt("permit_cuatrimestre"),
                                             "enrollment_number" to
@@ -216,6 +219,7 @@ class MySQLHistoryRepository(private val conn: ConnMySQL) : IHistoryRepository {
                 ph.request_date,
                 p.description AS permit_description,
                 p.evidence AS permit_evidence,
+                p.permit_document_url AS permit_document_url,
                 p.cuatrimestre AS permit_cuatrimestre,
                 s.enrollment_number,
                 CONCAT(u.first_name, ' ', COALESCE(u.middle_name, ''), ' ', u.last_name, ' ', COALESCE(u.second_last_name, '')) AS student_name,
@@ -250,6 +254,8 @@ class MySQLHistoryRepository(private val conn: ConnMySQL) : IHistoryRepository {
                                     "permit_description" to
                                             resultSet.getString("permit_description"),
                                     "permit_evidence" to resultSet.getString("permit_evidence"),
+                                    "permit_document_url" to
+                                            resultSet.getString("permit_document_url"),
                                     "permit_cuatrimestre" to
                                             resultSet.getInt("permit_cuatrimestre"),
                                     "enrollment_number" to resultSet.getString("enrollment_number"),
@@ -322,6 +328,7 @@ class MySQLHistoryRepository(private val conn: ConnMySQL) : IHistoryRepository {
                 ph.request_date,
                 p.description AS permit_description,
                 p.evidence AS permit_evidence,
+                p.permit_document_url AS permit_document_url,
                 p.cuatrimestre AS permit_cuatrimestre,
                 s.enrollment_number,
                 CONCAT(u.first_name, ' ', COALESCE(u.middle_name, ''), ' ', u.last_name, ' ', COALESCE(u.second_last_name, '')) AS student_name,
@@ -360,6 +367,8 @@ class MySQLHistoryRepository(private val conn: ConnMySQL) : IHistoryRepository {
                                                     resultSet.getString("permit_description"),
                                             "permit_evidence" to
                                                     resultSet.getString("permit_evidence"),
+                                            "permit_document_url" to
+                                                    resultSet.getString("permit_document_url"),
                                             "permit_cuatrimestre" to
                                                     resultSet.getInt("permit_cuatrimestre"),
                                             "enrollment_number" to
@@ -479,6 +488,7 @@ class MySQLHistoryRepository(private val conn: ConnMySQL) : IHistoryRepository {
             ph.request_date,
             p.description AS permit_description,
             p.evidence AS permit_evidence,
+            p.permit_document_url AS permit_document_url,
             p.cuatrimestre AS permit_cuatrimestre,
             s.enrollment_number,
             CONCAT(u.first_name, ' ', COALESCE(u.middle_name, ''), ' ', u.last_name, ' ', COALESCE(u.second_last_name, '')) AS student_name,
@@ -517,6 +527,8 @@ class MySQLHistoryRepository(private val conn: ConnMySQL) : IHistoryRepository {
                                                     resultSet.getString("permit_description"),
                                             "permit_evidence" to
                                                     resultSet.getString("permit_evidence"),
+                                            "permit_document_url" to
+                                                    resultSet.getString("permit_document_url"),
                                             "permit_cuatrimestre" to
                                                     resultSet.getInt("permit_cuatrimestre"),
                                             "enrollment_number" to

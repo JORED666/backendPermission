@@ -38,6 +38,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("com.cloudinary:cloudinary-http44:1.36.0")
     
+    implementation("com.itextpdf:itext7-core:7.2.5")
+    implementation("org.apache.pdfbox:pdfbox:2.0.29")
+    
+    implementation("org.apache.commons:commons-imaging:1.0-alpha3")
+
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
 }

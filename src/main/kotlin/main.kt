@@ -161,7 +161,9 @@ fun Application.module() {
         permitionDependencies.getAllPermitsController, 
         permitionDependencies.getPermitByIdController, 
         permitionDependencies.updatePermitController, 
-        permitionDependencies.deletePermitController
+        permitionDependencies.deletePermitController,
+        permitionDependencies.updatePermitDocumentUrlController,
+        permitionDependencies.generatePermitPDFController  // 🎯 NUEVO
     )
 
     val port = environment.config.propertyOrNull("ktor.deployment.port")?.getString() ?: "8080"

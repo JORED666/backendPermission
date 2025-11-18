@@ -16,8 +16,8 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
 
     override suspend fun save(permit: Permition): Permition {
         val query = """
-            INSERT INTO permits (student_id, tutor_id, start_date, end_date, reason, description, cuatrimestre, evidence, status, request_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO permits (student_id, tutor_id, start_date, end_date, reason, description, cuatrimestre, evidence, status, request_date, permit_document_url) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
 
         return try {
@@ -33,6 +33,7 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                     statement.setString(8, permit.evidence)
                     statement.setString(9, permit.status.name.lowercase())
                     statement.setTimestamp(10, Timestamp.valueOf(permit.requestDate))
+                    statement.setString(11, permit.permitDocumentUrl)
 
                     statement.executeUpdate()
 
@@ -52,7 +53,7 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
 
     override suspend fun getById(permitId: Int): Permition? {
         val query = """
-            SELECT permit_id, student_id, tutor_id, start_date, end_date, reason, description, cuatrimestre, evidence, status, request_date 
+            SELECT permit_id, student_id, tutor_id, start_date, end_date, reason, description, cuatrimestre, evidence, status, request_date, permit_document_url
             FROM permits 
             WHERE permit_id = ?
         """
@@ -77,7 +78,8 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                                 cuatrimestre = resultSet.getInt("cuatrimestre"),
                                 evidence = resultSet.getString("evidence"),
                                 status = PermitStatus.fromString(resultSet.getString("status")),
-                                requestDate = resultSet.getTimestamp("request_date").toLocalDateTime()
+                                requestDate = resultSet.getTimestamp("request_date").toLocalDateTime(),
+                                permitDocumentUrl = resultSet.getString("permit_document_url")
                             )
                         }
                     }
@@ -90,7 +92,7 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
 
     override suspend fun getAll(): List<Permition> {
         val query = """
-            SELECT permit_id, student_id, tutor_id, start_date, end_date, reason, description, cuatrimestre, evidence, status, request_date 
+            SELECT permit_id, student_id, tutor_id, start_date, end_date, reason, description, cuatrimestre, evidence, status, request_date, permit_document_url
             FROM permits 
             ORDER BY request_date DESC
         """
@@ -113,7 +115,8 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                                         cuatrimestre = resultSet.getInt("cuatrimestre"),
                                         evidence = resultSet.getString("evidence"),
                                         status = PermitStatus.fromString(resultSet.getString("status")),
-                                        requestDate = resultSet.getTimestamp("request_date").toLocalDateTime()
+                                        requestDate = resultSet.getTimestamp("request_date").toLocalDateTime(),
+                                        permitDocumentUrl = resultSet.getString("permit_document_url")
                                     )
                                 )
                             }
@@ -128,7 +131,7 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
 
     override suspend fun getByStudentId(studentId: Int): List<Permition> {
         val query = """
-            SELECT permit_id, student_id, tutor_id, start_date, end_date, reason, description, cuatrimestre, evidence, status, request_date 
+            SELECT permit_id, student_id, tutor_id, start_date, end_date, reason, description, cuatrimestre, evidence, status, request_date, permit_document_url
             FROM permits 
             WHERE student_id = ?
             ORDER BY request_date DESC
@@ -153,7 +156,8 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                                         cuatrimestre = resultSet.getInt("cuatrimestre"),
                                         evidence = resultSet.getString("evidence"),
                                         status = PermitStatus.fromString(resultSet.getString("status")),
-                                        requestDate = resultSet.getTimestamp("request_date").toLocalDateTime()
+                                        requestDate = resultSet.getTimestamp("request_date").toLocalDateTime(),
+                                        permitDocumentUrl = resultSet.getString("permit_document_url")
                                     )
                                 )
                             }
@@ -168,7 +172,7 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
 
     override suspend fun getByTutorId(tutorId: Int): List<Permition> {
         val query = """
-            SELECT permit_id, student_id, tutor_id, start_date, end_date, reason, description, cuatrimestre, evidence, status, request_date 
+            SELECT permit_id, student_id, tutor_id, start_date, end_date, reason, description, cuatrimestre, evidence, status, request_date, permit_document_url
             FROM permits 
             WHERE tutor_id = ?
             ORDER BY request_date DESC
@@ -193,7 +197,8 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                                         cuatrimestre = resultSet.getInt("cuatrimestre"),
                                         evidence = resultSet.getString("evidence"),
                                         status = PermitStatus.fromString(resultSet.getString("status")),
-                                        requestDate = resultSet.getTimestamp("request_date").toLocalDateTime()
+                                        requestDate = resultSet.getTimestamp("request_date").toLocalDateTime(),
+                                        permitDocumentUrl = resultSet.getString("permit_document_url")
                                     )
                                 )
                             }
@@ -208,7 +213,7 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
 
     override suspend fun getByStatus(status: PermitStatus): List<Permition> {
         val query = """
-            SELECT permit_id, student_id, tutor_id, start_date, end_date, reason, description, cuatrimestre, evidence, status, request_date 
+            SELECT permit_id, student_id, tutor_id, start_date, end_date, reason, description, cuatrimestre, evidence, status, request_date, permit_document_url
             FROM permits 
             WHERE status = ?
             ORDER BY request_date DESC
@@ -233,7 +238,8 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                                         cuatrimestre = resultSet.getInt("cuatrimestre"),
                                         evidence = resultSet.getString("evidence"),
                                         status = PermitStatus.fromString(resultSet.getString("status")),
-                                        requestDate = resultSet.getTimestamp("request_date").toLocalDateTime()
+                                        requestDate = resultSet.getTimestamp("request_date").toLocalDateTime(),
+                                        permitDocumentUrl = resultSet.getString("permit_document_url")
                                     )
                                 )
                             }
@@ -257,7 +263,8 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                 description = ?, 
                 cuatrimestre = ?,
                 evidence = ?, 
-                status = ? 
+                status = ?,
+                permit_document_url = ?
             WHERE permit_id = ?
         """
 
@@ -273,7 +280,8 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                     statement.setInt(7, permit.cuatrimestre)
                     statement.setString(8, permit.evidence)
                     statement.setString(9, permit.status.name.lowercase())
-                    statement.setInt(10, permit.permitId!!)
+                    statement.setString(10, permit.permitDocumentUrl)
+                    statement.setInt(11, permit.permitId!!)
 
                     val rowsAffected = statement.executeUpdate()
 
@@ -319,6 +327,7 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
             p.evidence,
             p.status,
             p.request_date,
+            p.permit_document_url,
             s.student_id,
             s.user_id as student_user_id,
             s.enrollment_number,
@@ -410,7 +419,8 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                                     cuatrimestre = resultSet.getInt("cuatrimestre"),
                                     evidence = resultSet.getString("evidence"),
                                     status = PermitStatus.fromString(resultSet.getString("status")),
-                                    requestDate = resultSet.getTimestamp("request_date").toLocalDateTime()
+                                    requestDate = resultSet.getTimestamp("request_date").toLocalDateTime(),
+                                    permitDocumentUrl = resultSet.getString("permit_document_url")
                                 )
                             }
                         }
@@ -436,6 +446,7 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
             p.evidence,
             p.status,
             p.request_date,
+            p.permit_document_url,
             s.student_id,
             s.user_id as student_user_id,
             s.enrollment_number,
@@ -500,7 +511,8 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
                                     cuatrimestre = resultSet.getInt("cuatrimestre"),
                                     evidence = resultSet.getString("evidence"),
                                     status = PermitStatus.fromString(resultSet.getString("status")),
-                                    requestDate = resultSet.getTimestamp("request_date").toLocalDateTime()
+                                    requestDate = resultSet.getTimestamp("request_date").toLocalDateTime(),
+                                    permitDocumentUrl = resultSet.getString("permit_document_url")
                                 )
                             }
                             
@@ -571,6 +583,27 @@ class MySQLPermitRepository(private val conn: ConnMySQL) : PermitRepository {
             }
         } catch (error: Exception) {
             throw Exception("Failed to update permit teachers: ${error.message}")
+        }
+    }
+
+    override suspend fun updatePermitDocumentUrl(permitId: Int, documentUrl: String) {
+        val query = "UPDATE permits SET permit_document_url = ? WHERE permit_id = ?"
+        
+        try {
+            conn.getConnection().use { connection ->
+                connection.prepareStatement(query).use { statement ->
+                    statement.setString(1, documentUrl)
+                    statement.setInt(2, permitId)
+                    
+                    val rowsAffected = statement.executeUpdate()
+                    
+                    if (rowsAffected == 0) {
+                        throw Exception("Permit not found")
+                    }
+                }
+            }
+        } catch (error: Exception) {
+            throw Exception("Failed to update permit document URL: ${error.message}")
         }
     }
 }

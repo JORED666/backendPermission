@@ -3,14 +3,16 @@ package users.application
 import users.domain.IUserRepository
 import users.domain.entities.User
 import users.domain.dto.LoginResponse  
-import tutors.domain.ITutorRepository  
+import tutors.domain.ITutorRepository
+import students.domain.IStudentRepository  
 import core.security.HashService
 import core.security.AuthService 
 import java.time.LocalDateTime
 
 class AuthServiceUseCase(
     private val userRepo: IUserRepository,
-    private val tutorRepo: ITutorRepository
+    private val tutorRepo: ITutorRepository,
+    private val studentRepo: IStudentRepository  
 ) {
     
     suspend fun login(email: String, password: String): LoginResponse {
@@ -34,14 +36,19 @@ class AuthServiceUseCase(
         val tutor = tutorRepo.getByUserId(user.userId!!)
         val tutorId = tutor?.tutorId
         
-        println("Usuario ${user.userId} - TutorId: $tutorId")
+        val student = studentRepo.getByUserId(user.userId)
+        val studentId = student?.studentId
+        
+        println("Usuario ${user.userId} - RoleId: ${user.roleId} - TutorId: $tutorId - StudentId: $studentId")
         
         val token = AuthService.generateJWT(user.userId, user.email)
         
         return LoginResponse(
             token = token,
             userId = user.userId,
-            tutorId = tutorId,  
+            tutorId = tutorId,
+            studentId = studentId,  
+            roleId = user.roleId,   
             name = user.firstName,
             email = user.email
         )

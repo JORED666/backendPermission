@@ -22,7 +22,7 @@ fun Application.configureNotificationRoutes(
                 }
                 
                 // Marcar todas las notificaciones de un usuario como leídas
-                patch("/user/{userId}/read-all") {
+                put ("/user/{userId}/read-all") {
                     markAsReadController.executeAll(call)
                 }
             }

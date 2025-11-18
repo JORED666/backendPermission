@@ -17,4 +17,5 @@ interface PermitRepository {
     suspend fun update(permit: Permition): Unit
     suspend fun updatePermitTeachers(permitId: Int, teacherIds: List<Int>)
     suspend fun delete(permitId: Int): Unit
+    suspend fun updatePermitDocumentUrl(permitId: Int, documentUrl: String): Unit
 }

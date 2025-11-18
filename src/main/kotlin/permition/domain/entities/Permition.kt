@@ -15,5 +15,6 @@ data class Permition(
     val cuatrimestre: Int,
     val evidence: String? = null,
     val status: PermitStatus = PermitStatus.PENDING,
-    val requestDate: LocalDateTime = LocalDateTime.now()
+    val requestDate: LocalDateTime = LocalDateTime.now(),
+    val permitDocumentUrl: String? = null
 )

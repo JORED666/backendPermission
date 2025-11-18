@@ -35,28 +35,40 @@ class ConnMySQL {
             password = dbPassword
             driverClassName = "com.mysql.cj.jdbc.Driver"
             
+            // Configuración del Pool - OPTIMIZADA
             maximumPoolSize = 30              
             minimumIdle = 10                 
             connectionTimeout = 30000         
-            idleTimeout = 600000              
-            maxLifetime = 1800000             
-            keepaliveTime = 30000             
+            idleTimeout = 300000              
+            maxLifetime = 580000              // ✅ 9.6 min - Renovar ANTES que MySQL cierre (10 min)
+            keepaliveTime = 300000            // ✅ 5 min - Hacer "ping" para mantener viva
             
-            leakDetectionThreshold = 60000   
+            leakDetectionThreshold = 60000
             
+            // Optimizaciones de rendimiento
             addDataSourceProperty("cachePrepStmts", "true")
             addDataSourceProperty("prepStmtCacheSize", "250")
             addDataSourceProperty("prepStmtCacheSqlLimit", "2048")
-            addDataSourceProperty("useServerPrepStmts", "true")           
-            addDataSourceProperty("rewriteBatchedStatements", "true")    
-            addDataSourceProperty("cacheResultSetMetadata", "true")      
-            addDataSourceProperty("cacheServerConfiguration", "true")   
-            addDataSourceProperty("maintainTimeStats", "false")          
+            addDataSourceProperty("useServerPrepStmts", "true")
+            addDataSourceProperty("rewriteBatchedStatements", "true")
+            addDataSourceProperty("cacheResultSetMetadata", "true")
+            addDataSourceProperty("cacheServerConfiguration", "true")
+            addDataSourceProperty("maintainTimeStats", "false")
             
-            addDataSourceProperty("connectTimeout", "30000")             
-            addDataSourceProperty("socketTimeout", "30000")              
+            // Timeouts de red
+            addDataSourceProperty("connectTimeout", "30000")
+            addDataSourceProperty("socketTimeout", "30000")
             
-            poolName = "PermitsHikariPool"                               
+            // Propiedades adicionales para evitar conexiones cerradas
+            addDataSourceProperty("autoReconnect", "true")
+            addDataSourceProperty("failOverReadOnly", "false")
+            addDataSourceProperty("maxReconnects", "3")
+            
+            poolName = "PermitsHikariPool"
+            
+            // Habilitar validación de conexiones
+            connectionTestQuery = "SELECT 1"
+            validationTimeout = 3000
         }
 
         dataSource = HikariDataSource(config)
@@ -66,6 +78,8 @@ class ConnMySQL {
         println("   📊 Conexiones máximas: ${config.maximumPoolSize}")
         println("   📊 Conexiones mínimas idle: ${config.minimumIdle}")
         println("   ⏱️  Timeout de conexión: ${config.connectionTimeout}ms")
+        println("   ⏱️  Max lifetime: ${config.maxLifetime}ms (${config.maxLifetime / 60000} min)")
+        println("   💓 Keepalive: ${config.keepaliveTime}ms")
         println("   🔍 Detección de leaks: ${config.leakDetectionThreshold}ms")
         println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         testConnection()
@@ -74,12 +88,23 @@ class ConnMySQL {
     private fun testConnection() {
         try {
             dataSource.connection.use { connection ->
-                connection.prepareStatement("SELECT NOW()").use { statement ->
-                    statement.executeQuery().use { 
+                connection.prepareStatement("SELECT NOW(), @@wait_timeout as wait_timeout").use { statement ->
+                    statement.executeQuery().use { rs ->
+                        if (rs.next()) {
+                            val waitTimeout = rs.getInt("wait_timeout")
+                            println("✅ Conexión a MySQL exitosa.")
+                            println("   ⏱️  MySQL wait_timeout: ${waitTimeout}s (${waitTimeout / 60} min)")
+                            
+                            // Advertencia si maxLifetime es muy cercano a wait_timeout
+                            val maxLifetimeSeconds = 580000 / 1000
+                            if (maxLifetimeSeconds >= waitTimeout - 60) {
+                                println("   ⚠️  ADVERTENCIA: maxLifetime está muy cerca del wait_timeout de MySQL")
+                                println("      Se recomienda que maxLifetime sea al menos 60s menor que wait_timeout")
+                            }
+                        }
                     }
                 }
             }
-            println("✅ Conexión a MySQL exitosa.")
         } catch (error: Exception) {
             println("❌ Error al verificar la conexión a la base de datos: ${error.message}")
         }
@@ -120,7 +145,8 @@ class ConnMySQL {
                 
                 if (error.message?.contains("ECONNRESET") == true || 
                     error.message?.contains("PROTOCOL_CONNECTION_LOST") == true ||
-                    error.message?.contains("Connection is not available") == true) {  
+                    error.message?.contains("Connection is not available") == true ||
+                    error.message?.contains("No operations allowed after connection closed") == true) {
                     if (i < maxRetries - 1) {
                         delay(1000L * (i + 1))
                         continue

@@ -2,7 +2,8 @@ package users.infrastructure
 
 import core.ConnMySQL
 import users.infrastructure.adapters.MySQLUserRepository
-import tutors.infrastructure.adapters.MySQLTutorRepository  
+import tutors.infrastructure.adapters.MySQLTutorRepository
+import students.infrastructure.adapters.MySQLStudentRepository  // ← AGREGAR ESTE IMPORT
 import users.application.*
 import users.infrastructure.controller.*
 
@@ -29,10 +30,11 @@ fun initUsers(
 ): DependenciesUsers {
     
     val userRepository = MySQLUserRepository(conn)
-    val tutorRepository = MySQLTutorRepository(conn)  
+    val tutorRepository = MySQLTutorRepository(conn)
+    val studentRepository = MySQLStudentRepository(conn)  
     
-    val authService = AuthServiceUseCase(userRepository, tutorRepository)  
-    val oauthUseCase = OAuthUseCase(userRepository)
+    val authService = AuthServiceUseCase(userRepository, tutorRepository, studentRepository) 
+    val oauthUseCase = OAuthUseCase(userRepository, tutorRepository, studentRepository) 
     val createUserUseCase = CreateUserUseCase(userRepository)
     val getAllUsersUseCase = GetAllUsersUseCase(userRepository)
     val getUserByIdUseCase = GetUserByIdUseCase(userRepository)

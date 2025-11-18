@@ -23,6 +23,7 @@ data class PermitInfoResponse(
     val permitId: Int,
     val descripcion: String?,
     val evidencia: String?,
+    val permitDocumentUrl: String?,
     val cuatrimestre: Int
 )
 
@@ -62,6 +63,7 @@ data class HistoryWithDetailsResponse(
                     permitId = data["permit_id"] as Int,
                     descripcion = data["permit_description"] as? String,
                     evidencia = data["permit_evidence"] as? String,
+                    permitDocumentUrl = data["permit_document_url"] as? String,
                     cuatrimestre = data["permit_cuatrimestre"] as Int
                 ),
                 informacionEstudiante = StudentInfoResponse(

@@ -13,7 +13,9 @@ data class DependenciesPermits(
     val getAllPermitsController: GetAllPermitsController,
     val getPermitByIdController: GetPermitByIdController,
     val updatePermitController: UpdatePermitController,
-    val deletePermitController: DeletePermitController
+    val deletePermitController: DeletePermitController,
+    val updatePermitDocumentUrlController: UpdatePermitDocumentUrlController,
+    val generatePermitPDFController: GeneratePermitPDFController
 )
 
 fun initPermits(
@@ -28,6 +30,7 @@ fun initPermits(
     val getPermitByIdWithDetailsUseCase = GetPermitByIdWithDetailsUseCase(permitRepository)
     val updatePermitUseCase = UpdatePermitUseCase(permitRepository)
     val deletePermitUseCase = DeletePermitUseCase(permitRepository)
+    val updatePermitDocumentUrlUseCase = UpdatePermitDocumentUrlUseCase(permitRepository)
 
     return DependenciesPermits(
         createPermitController = CreatePermitController(
@@ -43,6 +46,11 @@ fun initPermits(
             getPermitByIdWithDetailsUseCase,
             notificationService
         ),
-        deletePermitController = DeletePermitController(deletePermitUseCase)
+        deletePermitController = DeletePermitController(deletePermitUseCase),
+        updatePermitDocumentUrlController = UpdatePermitDocumentUrlController(updatePermitDocumentUrlUseCase),
+        generatePermitPDFController = GeneratePermitPDFController(
+            getPermitByIdWithDetailsUseCase,
+            updatePermitDocumentUrlUseCase
+        )
     )
 }

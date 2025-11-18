@@ -15,7 +15,8 @@ data class PermitWithDetails(
     val cuatrimestre: Int,
     val evidence: String?,
     val status: PermitStatus,
-    val requestDate: LocalDateTime
+    val requestDate: LocalDateTime,
+    val permitDocumentUrl: String? = null
 )
 
 data class StudentInfo(

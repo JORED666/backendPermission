@@ -38,7 +38,8 @@ fun initNotify(
         studentRepository,
         permitTeacherRepository,
         tutorRepository,
-        teacherRepository  
+        teacherRepository,
+        notifyRepository  
     )
 
     return DependenciesNotify(

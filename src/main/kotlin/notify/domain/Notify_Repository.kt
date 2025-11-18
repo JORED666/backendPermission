@@ -1,6 +1,7 @@
 package notify.domain
 
 import notify.domain.entities.Notify
+import notify.domain.dto.NotificationWithDetailsResponse
 
 interface INotifyRepository {
     suspend fun save(notify: Notify): Notify
@@ -10,4 +11,5 @@ interface INotifyRepository {
     suspend fun markAsRead(notificationId: Int): Unit
     suspend fun markAllAsReadByReceiver(receiverId: Int): Unit
     suspend fun getWithDetails(receiverId: Int): List<Map<String, Any?>>
+    suspend fun getNotificationWithDetails(notificationId: Int): NotificationWithDetailsResponse?
 }

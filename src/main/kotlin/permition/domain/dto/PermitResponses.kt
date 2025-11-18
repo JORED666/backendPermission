@@ -45,7 +45,8 @@ data class PermitWithDetailsResponse(
     val cuatrimestre: Int, 
     val evidence: String?,
     val status: String,
-    val requestDate: String
+    val requestDate: String,
+    val permitDocumentUrl: String? = null
 ) {
     companion object {
         fun fromPermitWithDetails(permit: PermitWithDetails): PermitWithDetailsResponse {
@@ -82,7 +83,8 @@ data class PermitWithDetailsResponse(
                 cuatrimestre = permit.cuatrimestre, 
                 evidence = permit.evidence,
                 status = permit.status.name.lowercase(),
-                requestDate = permit.requestDate.toString()
+                requestDate = permit.requestDate.toString(),
+                permitDocumentUrl = permit.permitDocumentUrl
             )
         }
     }
@@ -101,7 +103,8 @@ data class PermitResponse(
     val cuatrimestre: Int, 
     val evidence: String?,
     val status: String,
-    val requestDate: String
+    val requestDate: String,
+    val permitDocumentUrl: String? = null
 ) {
     companion object {
         fun fromPermit(permit: Permition): PermitResponse {
@@ -117,7 +120,8 @@ data class PermitResponse(
                 cuatrimestre = permit.cuatrimestre,  
                 evidence = permit.evidence,
                 status = permit.status.name.lowercase(),
-                requestDate = permit.requestDate.toString()
+                requestDate = permit.requestDate.toString(),
+                permitDocumentUrl = permit.permitDocumentUrl 
             )
         }
     }
