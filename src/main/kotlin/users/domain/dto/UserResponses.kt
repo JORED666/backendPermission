@@ -10,6 +10,7 @@ data class UserResponse(
     val apellido_paterno: String,
     val apellido_materno: String?,
     val email: String,
+    val phone: String? = null,
     val rol_id: Int,
     val fecha_registro: String 
 ) {
@@ -21,6 +22,7 @@ data class UserResponse(
                 apellido_paterno = user.lastName,
                 apellido_materno = user.secondLastName,
                 email = user.email,
+                phone = user.phone,
                 rol_id = user.roleId,
                 fecha_registro = user.registrationDate.toString()
             )
@@ -83,4 +85,13 @@ data class LoginResponse(
 data class LoginSuccessResponse(
     val message: String,
     val data: LoginResponse
+)
+
+@Serializable
+data class UpdateUserRequest(
+    val firstName: String? = null,
+    val middleName: String? = null,
+    val lastName: String? = null,
+    val secondLastName: String? = null,
+    val phone: String? = null
 )

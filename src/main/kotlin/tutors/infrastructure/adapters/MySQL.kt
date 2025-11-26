@@ -15,7 +15,8 @@ class MySQLTutorRepository(private val conn: ConnMySQL) : ITutorRepository {
 
         try {
             conn.getConnection().use { connection ->
-                connection.prepareStatement(query, java.sql.Statement.RETURN_GENERATED_KEYS).use { statement ->
+                connection.prepareStatement(query, java.sql.Statement.RETURN_GENERATED_KEYS).use {
+                        statement ->
                     statement.setInt(1, tutor.userId)
                     statement.executeUpdate()
 
@@ -34,7 +35,8 @@ class MySQLTutorRepository(private val conn: ConnMySQL) : ITutorRepository {
     }
 
     override suspend fun getAll(): List<Tutor> {
-        val query = """
+        val query =
+                """
             SELECT tutor_id, user_id 
             FROM tutors 
             ORDER BY tutor_id DESC
@@ -48,10 +50,10 @@ class MySQLTutorRepository(private val conn: ConnMySQL) : ITutorRepository {
 
                         while (resultSet.next()) {
                             tutors.add(
-                                Tutor(
-                                    tutorId = resultSet.getInt("tutor_id"),
-                                    userId = resultSet.getInt("user_id")
-                                )
+                                    Tutor(
+                                            tutorId = resultSet.getInt("tutor_id"),
+                                            userId = resultSet.getInt("user_id")
+                                    )
                             )
                         }
 
@@ -65,7 +67,8 @@ class MySQLTutorRepository(private val conn: ConnMySQL) : ITutorRepository {
     }
 
     override suspend fun getById(id: Int): Tutor? {
-        val query = """
+        val query =
+                """
             SELECT tutor_id, user_id 
             FROM tutors 
             WHERE tutor_id = ?
@@ -82,8 +85,8 @@ class MySQLTutorRepository(private val conn: ConnMySQL) : ITutorRepository {
                         }
 
                         return Tutor(
-                            tutorId = resultSet.getInt("tutor_id"),
-                            userId = resultSet.getInt("user_id")
+                                tutorId = resultSet.getInt("tutor_id"),
+                                userId = resultSet.getInt("user_id")
                         )
                     }
                 }
@@ -94,7 +97,8 @@ class MySQLTutorRepository(private val conn: ConnMySQL) : ITutorRepository {
     }
 
     override suspend fun getByUserId(userId: Int): Tutor? {
-        val query = """
+        val query =
+                """
             SELECT tutor_id, user_id 
             FROM tutors 
             WHERE user_id = ?
@@ -111,8 +115,8 @@ class MySQLTutorRepository(private val conn: ConnMySQL) : ITutorRepository {
                         }
 
                         return Tutor(
-                            tutorId = resultSet.getInt("tutor_id"),
-                            userId = resultSet.getInt("user_id")
+                                tutorId = resultSet.getInt("tutor_id"),
+                                userId = resultSet.getInt("user_id")
                         )
                     }
                 }
@@ -123,17 +127,19 @@ class MySQLTutorRepository(private val conn: ConnMySQL) : ITutorRepository {
     }
 
     override suspend fun update(tutor: Tutor) {
-        val query = """
-            UPDATE tutors 
-            SET user_id = ? 
-            WHERE tutor_id = ?
-        """
+        val query =
+                """
+        UPDATE tutors 
+        SET user_id = ?, firma_url = ?
+        WHERE tutor_id = ?
+    """
 
         try {
             conn.getConnection().use { connection ->
                 connection.prepareStatement(query).use { statement ->
                     statement.setInt(1, tutor.userId)
-                    statement.setInt(2, tutor.tutorId!!)
+                    statement.setString(2, tutor.firmaUrl)
+                    statement.setInt(3, tutor.tutorId!!)
 
                     val rowsAffected = statement.executeUpdate()
 
@@ -168,24 +174,26 @@ class MySQLTutorRepository(private val conn: ConnMySQL) : ITutorRepository {
     }
 
     override suspend fun getAllWithDetails(): List<TutorWithDetails> {
-        val query = """
-            SELECT 
-                t.tutor_id,
-                t.user_id,
-                u.first_name,
-                u.middle_name,
-                u.last_name,
-                u.second_last_name,
-                u.email,
-                u.phone,
-                r.role_name,
-                r.description as role_description,
-                u.registration_date
-            FROM tutors t
-            INNER JOIN users u ON t.user_id = u.user_id
-            INNER JOIN roles r ON u.role_id = r.role_id
-            ORDER BY t.tutor_id DESC
-        """
+        val query =
+                """
+        SELECT 
+            t.tutor_id,
+            t.user_id,
+            t.firma_url,
+            u.first_name,
+            u.middle_name,
+            u.last_name,
+            u.second_last_name,
+            u.email,
+            u.phone,
+            r.role_name,
+            r.description as role_description,
+            u.registration_date
+        FROM tutors t
+        INNER JOIN users u ON t.user_id = u.user_id
+        INNER JOIN roles r ON u.role_id = r.role_id
+        ORDER BY t.tutor_id DESC
+    """
 
         try {
             conn.getConnection().use { connection ->
@@ -195,19 +203,25 @@ class MySQLTutorRepository(private val conn: ConnMySQL) : ITutorRepository {
 
                         while (resultSet.next()) {
                             tutors.add(
-                                TutorWithDetails(
-                                    tutorId = resultSet.getInt("tutor_id"),
-                                    userId = resultSet.getInt("user_id"),
-                                    firstName = resultSet.getString("first_name"),
-                                    middleName = resultSet.getString("middle_name"),
-                                    lastName = resultSet.getString("last_name"),
-                                    secondLastName = resultSet.getString("second_last_name"),
-                                    email = resultSet.getString("email"),
-                                    phone = resultSet.getString("phone"),
-                                    roleName = resultSet.getString("role_name"),
-                                    roleDescription = resultSet.getString("role_description"),
-                                    registrationDate = resultSet.getTimestamp("registration_date").toLocalDateTime()
-                                )
+                                    TutorWithDetails(
+                                            tutorId = resultSet.getInt("tutor_id"),
+                                            userId = resultSet.getInt("user_id"),
+                                            firstName = resultSet.getString("first_name"),
+                                            middleName = resultSet.getString("middle_name"),
+                                            lastName = resultSet.getString("last_name"),
+                                            secondLastName =
+                                                    resultSet.getString("second_last_name"),
+                                            email = resultSet.getString("email"),
+                                            phone = resultSet.getString("phone"),
+                                            roleName = resultSet.getString("role_name"),
+                                            roleDescription =
+                                                    resultSet.getString("role_description"),
+                                            registrationDate =
+                                                    resultSet
+                                                            .getTimestamp("registration_date")
+                                                            .toLocalDateTime(),
+                                            firmaUrl = resultSet.getString("firma_url")
+                                    )
                             )
                         }
 
@@ -221,24 +235,26 @@ class MySQLTutorRepository(private val conn: ConnMySQL) : ITutorRepository {
     }
 
     override suspend fun getByIdWithDetails(id: Int): TutorWithDetails? {
-        val query = """
-            SELECT 
-                t.tutor_id,
-                t.user_id,
-                u.first_name,
-                u.middle_name,
-                u.last_name,
-                u.second_last_name,
-                u.email,
-                u.phone,
-                r.role_name,
-                r.description as role_description,
-                u.registration_date
-            FROM tutors t
-            INNER JOIN users u ON t.user_id = u.user_id
-            INNER JOIN roles r ON u.role_id = r.role_id
-            WHERE t.tutor_id = ?
-        """
+        val query =
+                """
+        SELECT 
+            t.tutor_id,
+            t.user_id,
+            t.firma_url,
+            u.first_name,
+            u.middle_name,
+            u.last_name,
+            u.second_last_name,
+            u.email,
+            u.phone,
+            r.role_name,
+            r.description as role_description,
+            u.registration_date
+        FROM tutors t
+        INNER JOIN users u ON t.user_id = u.user_id
+        INNER JOIN roles r ON u.role_id = r.role_id
+        WHERE t.tutor_id = ?
+    """
 
         try {
             conn.getConnection().use { connection ->
@@ -251,17 +267,21 @@ class MySQLTutorRepository(private val conn: ConnMySQL) : ITutorRepository {
                         }
 
                         return TutorWithDetails(
-                            tutorId = resultSet.getInt("tutor_id"),
-                            userId = resultSet.getInt("user_id"),
-                            firstName = resultSet.getString("first_name"),
-                            middleName = resultSet.getString("middle_name"),
-                            lastName = resultSet.getString("last_name"),
-                            secondLastName = resultSet.getString("second_last_name"),
-                            email = resultSet.getString("email"),
-                            phone = resultSet.getString("phone"),
-                            roleName = resultSet.getString("role_name"),
-                            roleDescription = resultSet.getString("role_description"),
-                            registrationDate = resultSet.getTimestamp("registration_date").toLocalDateTime()
+                                tutorId = resultSet.getInt("tutor_id"),
+                                userId = resultSet.getInt("user_id"),
+                                firstName = resultSet.getString("first_name"),
+                                middleName = resultSet.getString("middle_name"),
+                                lastName = resultSet.getString("last_name"),
+                                secondLastName = resultSet.getString("second_last_name"),
+                                email = resultSet.getString("email"),
+                                phone = resultSet.getString("phone"),
+                                roleName = resultSet.getString("role_name"),
+                                roleDescription = resultSet.getString("role_description"),
+                                registrationDate =
+                                        resultSet
+                                                .getTimestamp("registration_date")
+                                                .toLocalDateTime(),
+                                firmaUrl = resultSet.getString("firma_url") 
                         )
                     }
                 }

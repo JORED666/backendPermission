@@ -110,7 +110,7 @@ fun Application.module() {
         createStudentController = studentDependencies.createStudentController,
         getAllStudentController = studentDependencies.getAllStudentController,
         getStudentByIdController = studentDependencies.getStudentByIdController,
-        getStudentByUserIdController = studentDependencies.getStudentByUserIdController, // NUEVO
+        getStudentByUserIdController = studentDependencies.getStudentByUserIdController,
         getStudentsByTutorIdController = studentDependencies.getStudentsByTutorIdController,
         searchStudentController = studentDependencies.searchStudentController,
         updateStudentController = studentDependencies.updateStudentController,
@@ -163,7 +163,7 @@ fun Application.module() {
         permitionDependencies.updatePermitController, 
         permitionDependencies.deletePermitController,
         permitionDependencies.updatePermitDocumentUrlController,
-        permitionDependencies.generatePermitPDFController  // 🎯 NUEVO
+        permitionDependencies.generatePermitPDFController 
     )
 
     val port = environment.config.propertyOrNull("ktor.deployment.port")?.getString() ?: "8080"

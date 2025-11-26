@@ -1,20 +1,26 @@
 package users.application
 
 import users.domain.IUserRepository
-import users.domain.entities.User
+import users.domain.dto.UpdateUserRequest
 
 class UpdateUserUseCase(private val db: IUserRepository) {
     
-    suspend fun execute(user: User) {
-        if (user.userId == null || user.userId <= 0) {
+    suspend fun execute(userId: Int, updateData: UpdateUserRequest) {
+        if (userId <= 0) {
             throw IllegalArgumentException("ID inválido")
         }
         
-        val existingUser = db.getById(user.userId)
-        if (existingUser == null) {
-            throw IllegalArgumentException("Usuario no encontrado")
-        }
+        val existingUser = db.getById(userId)
+            ?: throw IllegalArgumentException("Usuario no encontrado")
         
-        db.update(user)
+          val updatedUser = existingUser.copy(
+            firstName = updateData.firstName ?: existingUser.firstName,
+            middleName = updateData.middleName ?: existingUser.middleName,
+            lastName = updateData.lastName ?: existingUser.lastName,
+            secondLastName = updateData.secondLastName ?: existingUser.secondLastName,
+            phone = updateData.phone ?: existingUser.phone
+         )
+        
+        db.update(updatedUser)
     }
 }

@@ -20,15 +20,16 @@ fun initTutors(conn: ConnMySQL): DependenciesTutors {
     
     val createTutorUseCase = CreateTutorUseCase(tutorRepository)
     val getAllTutorsUseCase = GetAllTutorsWithDetailsUseCase(tutorRepository)
-    val getTutorByIdUseCase = GetTutorByIdWithDetailsUseCase(tutorRepository)
+    val getTutorByIdWithDetailsUseCase = GetTutorByIdWithDetailsUseCase(tutorRepository)
+    val getTutorByIdUseCase = GetTutorByIdUseCase(tutorRepository) 
     val updateTutorUseCase = UpdateTutorUseCase(tutorRepository)
     val deleteTutorUseCase = DeleteTutorUseCase(tutorRepository)
 
     return DependenciesTutors(
         createTutorController = CreateTutorController(createTutorUseCase),
         getAllTutorsController = GetAllTutorsController(getAllTutorsUseCase),
-        getTutorByIdController = GetTutorByIdController(getTutorByIdUseCase),
-        updateTutorController = UpdateTutorController(updateTutorUseCase),
+        getTutorByIdController = GetTutorByIdController(getTutorByIdWithDetailsUseCase),
+        updateTutorController = UpdateTutorController(updateTutorUseCase, getTutorByIdUseCase), 
         deleteTutorController = DeleteTutorController(deleteTutorUseCase),
         tutorRepository = tutorRepository  
     )

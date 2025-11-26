@@ -33,7 +33,8 @@ data class TutorInfo(
     val userId: Int,
     val fullName: String,
     val email: String,
-    val phone: String?
+    val phone: String?,
+    val firmaUrl: String? = null
 )
 
 data class TeacherInfo(

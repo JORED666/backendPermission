@@ -13,5 +13,6 @@ data class TutorWithDetails(
     val phone: String?,
     val roleName: String,
     val roleDescription: String,
-    val registrationDate: LocalDateTime
+    val registrationDate: LocalDateTime,
+    val firmaUrl: String? = null
 )

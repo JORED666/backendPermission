@@ -44,6 +44,7 @@ class PDFGeneratorService {
             endDate: LocalDate,
             reason: String,
             tutorName: String,
+            firmaUrl: String? = null,
             templateImagePath: String = "src/main/resources/template/template.png"
         ): ByteArray {
             val outputStream = ByteArrayOutputStream()
@@ -80,7 +81,7 @@ class PDFGeneratorService {
                     .setTextAlignment(TextAlignment.RIGHT)
                     .setFixedPosition(
                         PageSize.A4.width - 220f,
-                        PageSize.A4.height - 170f, // 🎯 MÁS ABAJO
+                        PageSize.A4.height - 170f,
                         200f
                     )
                 document.add(headerBlock)
@@ -93,7 +94,7 @@ class PDFGeneratorService {
                     .setFont(boldFont)
                     .setFontSize(10f)
                     .setFixedPosition(
-                        130f, // 🎯 MÁS A LA DERECHA
+                        130f,
                         PageSize.A4.height - 280f,
                         300f
                     )
@@ -115,9 +116,9 @@ class PDFGeneratorService {
                     .add(Text("; por lo que solicito de ustedes su apoyo para recibirle tareas, así como otras actividades realizadas en su ausencia.").setFont(normalFont).setFontSize(10f))
                     .setTextAlignment(TextAlignment.JUSTIFIED)
                     .setFixedPosition(
-                        130f, // 🎯 MÁS A LA DERECHA
+                        130f,
                         PageSize.A4.height - 480f,
-                        PageSize.A4.width - 190f // 🎯 Ancho ajustado
+                        PageSize.A4.width - 190f
                     )
                 document.add(cuerpo)
                 
@@ -126,7 +127,7 @@ class PDFGeneratorService {
                     .setFont(normalFont)
                     .setFontSize(10f)
                     .setFixedPosition(
-                        130f, // 🎯 MÁS A LA DERECHA
+                        130f,
                         PageSize.A4.height - 560f,
                         400f
                     )
@@ -137,7 +138,7 @@ class PDFGeneratorService {
                     .setFont(boldFont)
                     .setFontSize(10f)
                     .setFixedPosition(
-                        130f, // 🎯 MÁS A LA DERECHA
+                        130f,
                         PageSize.A4.height - 650f,
                         300f
                     )
@@ -148,24 +149,43 @@ class PDFGeneratorService {
                     .setFont(boldFont)
                     .setFontSize(8f)
                     .setFixedPosition(
-                        130f, // 🎯 MÁS A LA DERECHA
+                        130f,
                         PageSize.A4.height - 670f,
                         300f
                     )
                 document.add(lema)
                 
-                // 8. Texto "Firma" - MÁS A LA DERECHA
-                val firmaTexto = Paragraph("Firma")
-                    .setFont(boldFont)
-                    .setFontSize(32f)
-                    .setFontColor(DeviceRgb(29, 78, 216))
-                    .setRotationAngle(Math.toRadians(-12.0))
-                    .setFixedPosition(
-                        130f, // 🎯 MÁS A LA DERECHA
-                        200f,
-                        200f
-                    )
-                document.add(firmaTexto)
+                // 8. Firma (imagen o texto) - MÁS A LA DERECHA
+                if (firmaUrl != null && firmaUrl.isNotBlank()) {
+                    try {
+                        val firmaImageData = ImageDataFactory.create(firmaUrl)
+                        val firmaImage = Image(firmaImageData)
+                        // 🎯 Ajustar tamaño para que se vea bien
+                        firmaImage.scaleToFit(200f, 80f)
+                        // 🎯 Posición ajustada para centrar sobre la línea
+                        firmaImage.setFixedPosition(150f, 135f)
+                        document.add(firmaImage)
+                    } catch (e: Exception) {
+                        // Fallback: mostrar texto si falla cargar la imagen
+                        println("Error al cargar firma desde Cloudinary: ${e.message}")
+                        val firmaTexto = Paragraph("Firma")
+                            .setFont(boldFont)
+                            .setFontSize(32f)
+                            .setFontColor(DeviceRgb(29, 78, 216))
+                            .setRotationAngle(Math.toRadians(-12.0))
+                            .setFixedPosition(130f, 200f, 200f)
+                        document.add(firmaTexto)
+                    }
+                } else {
+                    // Si no hay firma, mostrar texto
+                    val firmaTexto = Paragraph("Firma")
+                        .setFont(boldFont)
+                        .setFontSize(32f)
+                        .setFontColor(DeviceRgb(29, 78, 216))
+                        .setRotationAngle(Math.toRadians(-12.0))
+                        .setFixedPosition(130f, 200f, 200f)
+                    document.add(firmaTexto)
+                }
                 
                 // 9. Datos del tutor - MÁS A LA DERECHA
                 val tutorParagraph = Paragraph()
@@ -176,7 +196,7 @@ class PDFGeneratorService {
                     .setPaddingTop(8f)
                     .setWidth(288f)
                     .setFixedPosition(
-                        130f, // 🎯 MÁS A LA DERECHA
+                        130f,
                         120f,
                         288f
                     )

@@ -70,7 +70,8 @@ data class TutorDetailResponse(
     val user_id: Int,
     val informacion_personal: InformacionPersonal,
     val informacion_rol: InformacionRol,
-    val fecha_registro: String
+    val fecha_registro: String,
+    val firma_url: String? = null
 )
 
 @Serializable

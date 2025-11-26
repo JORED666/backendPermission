@@ -7,7 +7,7 @@ import tutors.application.GetTutorByIdWithDetailsUseCase
 import tutors.domain.dto.*
 
 class GetTutorByIdController(private val getTutorByIdWithDetails: GetTutorByIdWithDetailsUseCase) {
-    
+
     suspend fun execute(call: ApplicationCall) {
         try {
             val id = call.parameters["id"]?.toIntOrNull()
@@ -24,26 +24,31 @@ class GetTutorByIdController(private val getTutorByIdWithDetails: GetTutorByIdWi
                 return
             }
 
-            val response = TutorDetailResponse(
-                tutor_id = tutor.tutorId,
-                user_id = tutor.userId,
-                informacion_personal = InformacionPersonal(
-                    nombre_completo = "${tutor.firstName} ${tutor.middleName ?: ""} ${tutor.lastName} ${tutor.secondLastName ?: ""}".trim(),
-                    email = tutor.email,
-                    telefono = tutor.phone
-                ),
-                informacion_rol = InformacionRol(
-                    nombre_rol = tutor.roleName,
-                    descripcion = tutor.roleDescription
-                ),
-                fecha_registro = tutor.registrationDate.toString()
-            )
+            val response =
+                    TutorDetailResponse(
+                            tutor_id = tutor.tutorId,
+                            user_id = tutor.userId,
+                            informacion_personal =
+                                    InformacionPersonal(
+                                            nombre_completo =
+                                                    "${tutor.firstName} ${tutor.middleName ?: ""} ${tutor.lastName} ${tutor.secondLastName ?: ""}".trim(),
+                                            email = tutor.email,
+                                            telefono = tutor.phone
+                                    ),
+                            informacion_rol =
+                                    InformacionRol(
+                                            nombre_rol = tutor.roleName,
+                                            descripcion = tutor.roleDescription
+                                    ),
+                            fecha_registro = tutor.registrationDate.toString(),
+                            firma_url = tutor.firmaUrl
+                    )
 
             call.respond(HttpStatusCode.OK, response)
         } catch (error: Exception) {
             call.respond(
-                HttpStatusCode.InternalServerError,
-                ErrorResponse(error.message ?: "Error desconocido")
+                    HttpStatusCode.InternalServerError,
+                    ErrorResponse(error.message ?: "Error desconocido")
             )
         }
     }
